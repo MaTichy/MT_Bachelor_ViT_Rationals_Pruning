@@ -1,0 +1,24 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python-specific files and directories
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+ENV/
+*.env
+
+# Project-specific files and directories
+*.log
+*.sqlite3
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
