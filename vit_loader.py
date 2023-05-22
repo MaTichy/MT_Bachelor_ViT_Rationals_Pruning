@@ -1,119 +1,43 @@
-import torch
-from torch import nn
-
-from einops import rearrange
-from einops.layers.torch import Rearrange
+from efficientViT import ViT
+from simpleViT import simple_ViT
+from linformer import Linformer
 
 
-# helpers
-
-def pair(t):
-    return t if isinstance(t, tuple) else (t, t)
-
-def posemb_sincos_2d(patches, temperature = 10000, dtype = torch.float32):
-    _, h, w, dim, device, dtype = *patches.shape, patches.device, patches.dtype
-
-    y, x = torch.meshgrid(torch.arange(h, device = device), torch.arange(w, device = device), indexing = 'ij')
-    assert (dim % 4) == 0, 'feature dimension must be multiple of 4 for sincos emb'
-    omega = torch.arange(dim // 4, device = device) / (dim // 4 - 1)
-    omega = 1. / (temperature ** omega)
-
-    y = y.flatten()[:, None] * omega[None, :]
-    x = x.flatten()[:, None] * omega[None, :] 
-    pe = torch.cat((x.sin(), x.cos(), y.sin(), y.cos()), dim = 1)
-    return pe.type(dtype)
-
-# classes
-
-class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.LayerNorm(dim),
-            nn.Linear(dim, hidden_dim),
-            nn.PReLU(), #nn.PReLU() nn.GELU()
-            nn.Linear(hidden_dim, dim),
+def vit_loader(args):
+    if(args == "simple"):
+        
+        model = simple_ViT(
+            image_size = 32, # 256 Image size. If you have rectangular images, make sure your image size is the maximum of the width and height
+            patch_size = 4, # 16 Number of patches. image_size must be divisible by patch_size. The number of patches is:  n = (image_size // patch_size) ** 2 and n must be greater than 16.
+            num_classes = 10, #10, 200 Number of classes to classify.
+            dim = 1024, #1024, Last dimension of output tensor after linear transformation nn.Linear(..., dim).
+            depth = 6, # 6 Number of Transformer blocks.
+            heads = 16, # 16 Number of heads in Multi-head Attention layer.
+            mlp_dim = 2048 # 2048 Dimension of the MLP (FeedForward) layer.
         )
-    def forward(self, x):
-        return self.net(x)
+    
+    elif(args == "efficient"):
+        """
+        An implementation of Linformer in Pytorch. Linformer comes with two deficiencies. (1) It does not work for the auto-regressive case. (2) Assumes a fixed sequence length. However, if benchmarks show it to perform well enough, it will be added to this repository as a self-attention layer to be used in the encoder.
 
-class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64):
-        super().__init__()
-        inner_dim = dim_head *  heads
-        self.heads = heads
-        self.scale = dim_head ** -0.5
-        self.norm = nn.LayerNorm(dim)
-
-        self.attend = nn.Softmax(dim = -1)
-
-        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
-        self.to_out = nn.Linear(inner_dim, dim, bias = False)
-
-    def forward(self, x):
-        x = self.norm(x)
-
-        qkv = self.to_qkv(x).chunk(3, dim = -1)
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
-
-        dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
-
-        attn = self.attend(dots)
-
-        out = torch.matmul(attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
-        return self.to_out(out)
-
-class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
-        super().__init__()
-        self.layers = nn.ModuleList([])
-        for _ in range(depth):
-            self.layers.append(nn.ModuleList([
-                Attention(dim, heads = heads, dim_head = dim_head),
-                FeedForward(dim, mlp_dim)
-            ]))
-    def forward(self, x):
-        for attn, ff in self.layers:
-            x = attn(x) + x
-            x = ff(x) + x
-        return x
-
-class simple_ViT(nn.Module):
-    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64):
-        super().__init__()
-        image_height, image_width = pair(image_size)
-        patch_height, patch_width = pair(patch_size)
-
-        assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
-
-        num_patches = (image_height // patch_height) * (image_width // patch_width)
-        patch_dim = channels * patch_height * patch_width
-
-        self.to_patch_embedding = nn.Sequential(
-            Rearrange('b c (h p1) (w p2) -> b h w (p1 p2 c)', p1 = patch_height, p2 = patch_width),
-            nn.LayerNorm(patch_dim),
-            nn.Linear(patch_dim, dim),
-            nn.LayerNorm(dim),
+        Linformer has been put into production by Facebook!
+        """
+        
+        efficient_transformer = Linformer(
+            dim=128,
+            seq_len=64+1,  # 8x8 patches + 1 cls-token
+            depth=12,
+            heads=8,
+            k=64
         )
 
-        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim)
-
-        self.to_latent = nn.Identity()
-        self.linear_head = nn.Sequential(
-            nn.LayerNorm(dim),
-            nn.Linear(dim, num_classes)
+        model = ViT(
+            dim=128, # 128
+            image_size=256, # 256 tiny / 32 svhn
+            patch_size=32, # 32 tiny / 4 svhn
+            num_classes=200, # 200 tiny / 10 svhn
+            transformer=efficient_transformer, # efficient_transformer
+            channels=3, # 3
         )
-
-    def forward(self, img):
-        *_, h, w, dtype = *img.shape, img.dtype
-
-        x = self.to_patch_embedding(img)
-        pe = posemb_sincos_2d(x)
-        x = rearrange(x, 'b ... d -> b (...) d') + pe
-
-        x = self.transformer(x)
-        x = x.mean(dim = 1)
-
-        x = self.to_latent(x)
-        return self.linear_head(x)
+    return model   
+            
