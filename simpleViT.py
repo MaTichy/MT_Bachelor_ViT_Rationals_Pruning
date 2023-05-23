@@ -4,6 +4,8 @@ from torch import nn
 from einops import rearrange
 from einops.layers.torch import Rearrange
 
+from rationals import RationalsModel
+
 
 # helpers
 
@@ -31,7 +33,7 @@ class FeedForward(nn.Module):
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
-            nn.PReLU(), #nn.PReLU() nn.GELU()
+            RationalsModel(), #nn.PReLU(),
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
