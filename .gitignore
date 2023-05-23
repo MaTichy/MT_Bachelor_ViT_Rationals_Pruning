@@ -12,6 +12,7 @@ __pycache__/
 venv/
 ENV/
 *.env
+mtenv/
 
 # Project-specific files and directories
 *.log
@@ -22,3 +23,6 @@ ENV/
 .vscode/
 *.swp
 *.swo
+
+# data 
+data/
