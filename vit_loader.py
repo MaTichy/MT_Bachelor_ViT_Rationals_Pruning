@@ -7,8 +7,8 @@ def vit_loader(args):
     if(args == "simple"):
         
         model = simple_ViT(
-            image_size = 64, # 32 svhn / 64 tiny ;Image size. If you have rectangular images, make sure your image size is the maximum of the width and height
-            patch_size = 8, # 4 svhn / 8 tiny ;Number of patches. image_size must be divisible by patch_size. The number of patches is:  n = (image_size // patch_size) ** 2 and n must be greater than 16.
+            image_size = 32, # 32 svhn / 64 tiny ;Image size. If you have rectangular images, make sure your image size is the maximum of the width and height
+            patch_size = 4, # 4 svhn / 8 tiny ;Number of patches. image_size must be divisible by patch_size. The number of patches is:  n = (image_size // patch_size) ** 2 and n must be greater than 16.
             num_classes = 10, #10, 200 Number of classes to classify.
             dim = 1024, #1024, Last dimension of output tensor after linear transformation nn.Linear(..., dim).
             depth = 6, # 6 Number of Transformer blocks.

@@ -23,8 +23,12 @@ from torchvision import datasets, transforms
 from tqdm.notebook import tqdm
 
 from vit_loader import vit_loader
-from dataset import train_data, test_data, valid_data, train_loader, test_loader, valid_loader, seed, BATCH_SIZE
 
+from helpers import train
+from torchinfo import summary
+
+# change depending on dataset: for tiny images: dataset and for svhn: dataset2
+from dataset2 import train_data, test_data, valid_data, train_loader, test_loader, valid_loader, seed, BATCH_SIZE
 
 
 # Hyperparameters
@@ -47,6 +51,15 @@ optimizer = optim.Adam(model.parameters(), lr=lr)
 # scheduler
 scheduler = StepLR(optimizer, step_size=1, gamma=gamma)
 
+results = train(model)
+
+summary(model=model, 
+        input_size=(256, 3, 64, 64), # (batch_size, color_channels, height, width)
+        # col_names=["input_size"], # uncomment for smaller output
+        col_names=["input_size", "output_size", "num_params", "trainable"],
+        col_width=20,
+        row_settings=["var_names"])
+"""
 for epoch in range(epochs):
     epoch_loss = 0
     epoch_accuracy = 0
@@ -83,3 +96,4 @@ for epoch in range(epochs):
     print(
         f"Epoch : {epoch+1} - loss : {epoch_loss:.4f} - acc: {epoch_accuracy:.4f} - val_loss : {epoch_val_loss:.4f} - val_acc: {epoch_val_accuracy:.4f}\n"
     )
+"""
