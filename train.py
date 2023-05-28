@@ -24,7 +24,7 @@ from tqdm.notebook import tqdm
 
 from vit_loader import vit_loader
 
-from helpers import train
+from helpers import train, plot_loss_curves
 from torchinfo import summary
 
 # change depending on dataset: for tiny images: dataset and for svhn: dataset2
@@ -59,6 +59,8 @@ summary(model=model,
         col_names=["input_size", "output_size", "num_params", "trainable"],
         col_width=20,
         row_settings=["var_names"])
+
+plot_loss_curves(results)
 """
 for epoch in range(epochs):
     epoch_loss = 0
