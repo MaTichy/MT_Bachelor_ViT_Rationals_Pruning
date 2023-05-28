@@ -54,7 +54,7 @@ scheduler = StepLR(optimizer, step_size=1, gamma=gamma)
 results = train(model)
 
 summary(model=model, 
-        input_size=(256, 3, 64, 64), # (batch_size, color_channels, height, width)
+        input_size=(256, 3, 32, 32), # (batch_size, color_channels, height, width)
         # col_names=["input_size"], # uncomment for smaller output
         col_names=["input_size", "output_size", "num_params", "trainable"],
         col_width=20,
