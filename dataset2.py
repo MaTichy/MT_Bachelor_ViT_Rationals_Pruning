@@ -19,12 +19,11 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 # Set the batch size
-# 32 # this is lower than the ViT paper but it's because we're starting small
-BATCH_SIZE = 64 #64
+BATCH_SIZE = 64 #64, 128
 seed = 42   #42
 
-# Create image size (from Table 3 in the ViT paper) 
-IMG_SIZE = 32 # 64
+# svhn 32x32
+IMG_SIZE = 32 
 
 def seed_everything(seed):
     random.seed(seed)
@@ -42,14 +41,14 @@ train_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
     transforms.RandomCrop(32),
     transforms.ToTensor(),
-    #transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
+    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
 ])
 
 test_transform = transforms.Compose([
     transforms.Resize(32),
     transforms.CenterCrop(32),
     transforms.ToTensor(),
-    #transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
+    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
 ])
 
 train_val_set = datasets.SVHN(root='../data/SVHN', split='train', download=True, transform=train_transform)
@@ -76,7 +75,7 @@ valid_loader = torch.utils.data.DataLoader(valid_data, shuffle=True, batch_size=
 test_loader = torch.utils.data.DataLoader(test_data, shuffle=False, batch_size=BATCH_SIZE, drop_last=True)
 
 
-print(len(train_loader), len(test_loader), len(valid_loader))
+print(len(train_loader), len(valid_loader), len(test_loader))
 
 # Get a batch of images
 image_batch, label_batch = next(iter(train_loader))

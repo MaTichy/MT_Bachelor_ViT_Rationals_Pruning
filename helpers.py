@@ -169,7 +169,7 @@ def train_step(model: torch.nn.Module,
     (0.1112, 0.8743)
     """
     # Put model in train mode
-    model.train()
+    #model.train()
 
     # Setup train loss and train accuracy values
     train_loss, train_acc = 0, 0
@@ -204,7 +204,7 @@ def train_step(model: torch.nn.Module,
     train_acc = train_acc / len(dataloader)
     return train_loss, train_acc
 
-def test_step(model: torch.nn.Module, 
+def val_step(model: torch.nn.Module, 
               dataloader: torch.utils.data.DataLoader, 
               loss_fn: torch.nn.Module,
               device: torch.device) -> Tuple[float, float]:
@@ -222,10 +222,10 @@ def test_step(model: torch.nn.Module,
     (0.0223, 0.8985)
     """
     # Put model in eval mode
-    model.eval() 
+    #model.eval() 
 
     # Setup test loss and test accuracy values
-    test_loss, test_acc = 0, 0
+    val_loss, val_acc = 0, 0
 
     # Turn on inference context manager
     with torch.inference_mode():
@@ -235,24 +235,24 @@ def test_step(model: torch.nn.Module,
             X, y = X.to(device), y.to(device)
 
             # 1. Forward pass
-            test_pred_logits = model(X)
+            val_pred_logits = model(X)
 
             # 2. Calculate and accumulate loss
-            loss = loss_fn(test_pred_logits, y)
-            test_loss += loss.item()
+            loss = loss_fn(val_pred_logits, y)
+            val_loss += loss.item()
 
             # Calculate and accumulate accuracy
-            test_pred_labels = test_pred_logits.argmax(dim=1)
-            test_acc += ((test_pred_labels == y).sum().item()/len(test_pred_labels))
+            val_pred_labels = val_pred_logits.argmax(dim=1)
+            val_acc += ((val_pred_labels == y).sum().item()/len(val_pred_labels))
 
     # Adjust metrics to get average loss and accuracy per batch 
-    test_loss = test_loss / len(dataloader)
-    test_acc = test_acc / len(dataloader)
-    return test_loss, test_acc
+    val_loss = val_loss / len(dataloader)
+    val_acc = val_acc / len(dataloader)
+    return val_loss, val_acc
 
 def train(model: torch.nn.Module, 
           train_dataloader: torch.utils.data.DataLoader, 
-          test_dataloader: torch.utils.data.DataLoader, 
+          val_dataloader: torch.utils.data.DataLoader, 
           optimizer: torch.optim.Optimizer,
           loss_fn: torch.nn.Module,
           epochs: int,
@@ -287,12 +287,10 @@ def train(model: torch.nn.Module,
     # Create empty results dictionary
     results = {"train_loss": [],
                "train_acc": [],
-               "test_loss": [],
-               "test_acc": []
+               "val_loss": [],
+               "val_acc": []
     }
     
-    # Make sure model on target device
-    model.to(device)
 
     # Loop through training and testing steps for a number of epochs
     for epoch in tqdm(range(epochs)):
@@ -301,25 +299,25 @@ def train(model: torch.nn.Module,
                                           loss_fn=loss_fn,
                                           optimizer=optimizer,
                                           device=device)
-        test_loss, test_acc = test_step(model=model,
-          dataloader=test_dataloader,
-          loss_fn=loss_fn,
-          device=device)
+        val_loss, val_acc = val_step(model=model,
+                                    dataloader=val_dataloader,
+                                    loss_fn=loss_fn,
+                                    device=device)
 
         # Print out what's happening
         print(
           f"Epoch: {epoch+1} | "
           f"train_loss: {train_loss:.4f} | "
           f"train_acc: {train_acc:.4f} | "
-          f"test_loss: {test_loss:.4f} | "
-          f"test_acc: {test_acc:.4f}"
+          f"val_loss: {val_loss:.4f} | "
+          f"val_acc: {val_acc:.4f}"
         )
 
         # Update results dictionary
         results["train_loss"].append(train_loss)
         results["train_acc"].append(train_acc)
-        results["test_loss"].append(test_loss)
-        results["test_acc"].append(test_acc)
+        results["val_loss"].append(val_loss)
+        results["val_acc"].append(val_acc)
 
     # Return the filled results at the end of the epochs
     return results
@@ -339,11 +337,11 @@ def plot_loss_curves(results: Dict[str, List[float]]):
     
     # Get the loss values of the results dictionary (training and test)
     loss = results['train_loss']
-    test_loss = results['test_loss']
+    val_loss = results['val_loss']
 
     # Get the accuracy values of the results dictionary (training and test)
     accuracy = results['train_acc']
-    test_accuracy = results['test_acc']
+    val_accuracy = results['val_acc']
 
     # Figure out how many epochs there were
     epochs = range(len(results['train_loss']))
@@ -354,7 +352,7 @@ def plot_loss_curves(results: Dict[str, List[float]]):
     # Plot loss
     plt.subplot(1, 2, 1)
     plt.plot(epochs, loss, label='train_loss')
-    plt.plot(epochs, test_loss, label='test_loss')
+    plt.plot(epochs, val_loss, label='val_loss')
     plt.title('Loss')
     plt.xlabel('Epochs')
     plt.legend()
@@ -363,7 +361,7 @@ def plot_loss_curves(results: Dict[str, List[float]]):
     # Plot accuracy
     plt.subplot(1, 2, 2)
     plt.plot(epochs, accuracy, label='train_accuracy')
-    plt.plot(epochs, test_accuracy, label='test_accuracy')
+    plt.plot(epochs, val_accuracy, label='val_accuracy')
     plt.title('Accuracy')
     plt.xlabel('Epochs')
     plt.legend()

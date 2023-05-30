@@ -3,6 +3,8 @@ from torch import nn
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
+from rationals import RationalsModel
+
 def pair(t):
     return t if isinstance(t, tuple) else (t, t)
 
@@ -19,6 +21,8 @@ class ViT(nn.Module):
             Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1 = patch_size, p2 = patch_size),
             nn.LayerNorm(patch_dim),
             nn.Linear(patch_dim, dim),
+            #possible RationalsModel() add
+            #RationalsModel(),
             nn.LayerNorm(dim)
         )
 
@@ -36,7 +40,7 @@ class ViT(nn.Module):
 
     def forward(self, img):
         x = self.to_patch_embedding(img)
-        b, n, _ = x.shape
+        b, n, _ = x.shape 
 
         cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
         x = torch.cat((cls_tokens, x), dim=1)
