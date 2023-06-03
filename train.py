@@ -37,12 +37,25 @@ from dataset2 import train_data, test_data, valid_data, train_loader, test_loade
 epochs = 50 #20
 lr = 3e-5 #3e-5
 gamma=0.7
+gamma=0.7
 
 # when changing numbers the hyperparameters of the models have to be adjustet in a matter fit for the dataset
 model = vit_loader("simple") # "simple" or "efficient"
 
 
 # loss function
+loss = nn.CrossEntropyLoss()
+
+"""
+# for tiny adjust weight decay original 0.3
+# Setup the optimizer to optimize our ViT model parameters using hyperparameters from the ViT paper 
+optimizer = torch.optim.Adam(params=model.parameters(), 
+                             lr=3e-5, # Base LR from Table 3 for ViT-* ImageNet-1k (3e-3 eigentlich)
+                             betas=(0.9, 0.999), # default values but also mentioned in ViT paper section 4.1 (Training & Fine-tuning)
+                             weight_decay=0.3) # from the ViT paper section 4.1 (Training & Fine-tuning) and Table 3 for ViT-* ImageNet-1k
+"""
+
+
 loss = nn.CrossEntropyLoss()
 
 """

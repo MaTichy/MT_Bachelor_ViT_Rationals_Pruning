@@ -1,6 +1,6 @@
 from efficientViT import ViT
 from simpleViT import simple_ViT
-from linformer import Linformer
+from linformer_own import Linformer
 
 
 def vit_loader(args):
@@ -11,8 +11,8 @@ def vit_loader(args):
             patch_size = 4, # 4 svhn / 8 tiny ;Number of patches. image_size must be divisible by patch_size. The number of patches is:  n = (image_size // patch_size) ** 2 and n must be greater than 16.
             num_classes = 10, #10, 200 Number of classes to classify.
             dim = 1024, #1024, Last dimension of output tensor after linear transformation nn.Linear(..., dim).
-            depth = 6, # 6 Number of Transformer blocks.
-            heads = 16, # 16 Number of heads in Multi-head Attention layer.
+            depth = 9, # 6 Number of Transformer blocks. 9
+            heads = 12, # 16 Number of heads in Multi-head Attention layer. 12
             mlp_dim = 2048 # 2048 Dimension of the MLP (FeedForward) layer.
         )
     
@@ -33,9 +33,9 @@ def vit_loader(args):
 
         model = ViT(
             dim=128, # 128
-            image_size=64, # 64 tiny / 32 svhn
-            patch_size=8, # 8 tiny / 4 svhn
-            num_classes=200, # 200 tiny / 10 svhn
+            image_size=32, # 64 tiny / 32 svhn
+            patch_size=4, # 8 tiny / 4 svhn
+            num_classes=10, # 200 tiny / 10 svhn
             transformer=efficient_transformer, # efficient_transformer
             channels=3, # 3
         )

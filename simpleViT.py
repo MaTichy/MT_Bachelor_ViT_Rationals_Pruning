@@ -39,10 +39,11 @@ class FeedForward(nn.Module):
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
+        #print(f'Input shape1: {x.shape}')
         return self.net(x)
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64):
+    def __init__(self, dim, heads = 8, dim_head = 64): # heads = 8,16  dim_head = 64, 128
         super().__init__()
         inner_dim = dim_head *  heads
         self.heads = heads
@@ -79,8 +80,11 @@ class Transformer(nn.Module):
             ]))
     def forward(self, x):
         for attn, ff in self.layers:
+            #print(f'Input shape2: {x.shape}')
             x = attn(x) + x
+            #print(f'Output shape3: {x.shape}')
             x = ff(x) + x
+            #print(f'Output shape4: {x.shape}')
         return x
 
 class simple_ViT(pl.LightningModule):

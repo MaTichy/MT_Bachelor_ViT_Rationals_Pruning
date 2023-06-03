@@ -3,10 +3,13 @@ import json
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import torch
+import torch.nn as nn
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-class RationalsModel:
-    def __init__(self, n=5, m=5, function="relu", use_coefficients=False):
+class RationalsModel(nn.Module):
+    # n = batch size-1 (svhn 64 /tiny 256), m = number of hidden layers
+    def __init__(self, n=63, m=64, function="relu", use_coefficients=False):
         """
         The __init__ function is called when the class is instantiated.
         It sets up the attributes of an instance of a class.
@@ -20,6 +23,7 @@ class RationalsModel:
         from a file or not
         :return: Nothing
         """
+        super(RationalsModel, self).__init__() #mod pytorch
         self.n = n
         self.m = m
         self.p = n + m
@@ -42,15 +46,18 @@ class RationalsModel:
         :param x: Compute the polynomial
         :return: A tensor of shape (n_samples, 1)
         """
-        x_tensor = torch.tensor(x)
+        x_tensor = x.clone().detach().to(device)
+        #device = x_tensor.device
+        
+        
         n_coeffs = self.coefficients[: self.n + 1]
         m_coeffs = self.coefficients[self.n + 1 :]
 
-        x_powers = torch.pow(x_tensor, torch.arange(self.n + 1).unsqueeze(1))
-        numerator = torch.matmul(n_coeffs, x_powers)
+        x_powers = torch.pow(x_tensor, torch.arange(self.n + 1, device=device).unsqueeze(1))
+        numerator = torch.matmul(n_coeffs.to(device), x_powers)
 
-        x_powers = torch.pow(x_tensor, torch.arange(1, self.m + 1).unsqueeze(1))
-        denominator = torch.matmul(m_coeffs, x_powers)
+        x_powers = torch.pow(x_tensor, torch.arange(1, self.m + 1, device=device).unsqueeze(1))
+        denominator = torch.matmul(m_coeffs.to(device), x_powers)
 
         # compute overall polynomial
         polynomial = numerator / (torch.abs(denominator) + 1)
@@ -257,7 +264,7 @@ class RationalsModel:
             print("No file found!")
 
 
-def train_all(render=False, epsilon=0.001, use_coefficients=False):
+def train_all(render=True, epsilon=0.001, use_coefficients=False):
     """
     The train_all function trains a rational function for each of the activation
     functions in the function_list. The model is trained until it reaches an end
