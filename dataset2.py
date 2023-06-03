@@ -72,7 +72,7 @@ train_data, valid_data = train_test_split(train_val_set,
 
 
 train_loader = torch.utils.data.DataLoader(train_data, shuffle=True, batch_size=BATCH_SIZE, drop_last=True)
-valid_loader = torch.utils.data.DataLoader(valid_data, shuffle=True, batch_size=BATCH_SIZE, drop_last=True)
+valid_loader = torch.utils.data.DataLoader(valid_data, shuffle=False, batch_size=BATCH_SIZE, drop_last=True)
 test_loader = torch.utils.data.DataLoader(test_data, shuffle=False, batch_size=BATCH_SIZE, drop_last=True)
 
 

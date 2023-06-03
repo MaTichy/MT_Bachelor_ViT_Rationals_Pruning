@@ -6,6 +6,8 @@ from einops.layers.torch import Rearrange
 
 from rationals import RationalsModel
 
+import lightning as pl
+
 
 # helpers
 
@@ -33,7 +35,7 @@ class FeedForward(nn.Module):
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
-            RationalsModel(), #nn.PReLU(),
+            nn.PReLU(), #nn.PReLU(), RationalsModel(),
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
@@ -81,7 +83,7 @@ class Transformer(nn.Module):
             x = ff(x) + x
         return x
 
-class simple_ViT(nn.Module):
+class simple_ViT(pl.LightningModule):
     def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64):
         super().__init__()
         image_height, image_width = pair(image_size)
@@ -119,3 +121,46 @@ class simple_ViT(nn.Module):
 
         x = self.to_latent(x)
         return self.linear_head(x)
+    
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=3e-4)
+        return optimizer
+
+    def training_step(self, dataloader, batch_idx):
+
+        # Setup train loss and train accuracy values
+        train_loss, train_acc = 0, 0
+
+        # Loop through data loader data batches
+        X,y = dataloader
+
+        # 1. Forward pass
+        y_pred = self(X)
+
+        loss_fn = nn.CrossEntropyLoss()
+        loss = loss_fn(y_pred, y)
+        self.log('train_loss', loss)
+
+        return loss
+
+    def validation_step(self, dataloader, batch_idx):
+
+        # Setup test loss and test accuracy values
+        val_loss, val_acc = 0, 0
+
+        # Turn on inference context manager
+        with torch.inference_mode():
+            # Loop through DataLoader batches
+                X,y = dataloader
+
+                # 1. Forward pass
+                val_pred_logits = self(X)
+
+                loss_fn = nn.CrossEntropyLoss()
+                # 2. Calculate and accumulate loss
+                loss = loss_fn(val_pred_logits, y)
+                self.log('train_loss', loss)
+
+        return loss
+
+

@@ -19,6 +19,7 @@ class ViT(nn.Module):
             Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1 = patch_size, p2 = patch_size),
             nn.LayerNorm(patch_dim),
             nn.Linear(patch_dim, dim),
+            # activation function can be added here
             nn.LayerNorm(dim)
         )
 
