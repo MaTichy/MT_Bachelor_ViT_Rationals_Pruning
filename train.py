@@ -25,7 +25,6 @@ import lightning as pl
 
 from vit_loader import vit_loader
 
-from helpers import train_step, val_step
 from torchinfo import summary
 
 # change depending on dataset: for tiny images: dataset and for svhn: dataset2
@@ -56,16 +55,6 @@ optimizer = torch.optim.Adam(params=model.parameters(),
 """
 
 
-loss = nn.CrossEntropyLoss()
-
-"""
-# for tiny adjust weight decay original 0.3
-# Setup the optimizer to optimize our ViT model parameters using hyperparameters from the ViT paper 
-optimizer = torch.optim.Adam(params=model.parameters(), 
-                             lr=3e-5, # Base LR from Table 3 for ViT-* ImageNet-1k (3e-3 eigentlich)
-                             betas=(0.9, 0.999), # default values but also mentioned in ViT paper section 4.1 (Training & Fine-tuning)
-                             weight_decay=0.3) # from the ViT paper section 4.1 (Training & Fine-tuning) and Table 3 for ViT-* ImageNet-1k
-"""
 
 
 # optimizer

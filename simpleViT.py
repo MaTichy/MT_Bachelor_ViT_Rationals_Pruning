@@ -43,7 +43,7 @@ class FeedForward(nn.Module):
         return self.net(x)
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64): # heads = 8,16  dim_head = 64, 128
+    def __init__(self, dim, heads, dim_head): 
         super().__init__()
         inner_dim = dim_head *  heads
         self.heads = heads

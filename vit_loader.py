@@ -1,6 +1,6 @@
 from efficientViT import ViT
 from simpleViT import simple_ViT
-from linformer_own import Linformer
+from linformer import Linformer
 
 
 def vit_loader(args):
