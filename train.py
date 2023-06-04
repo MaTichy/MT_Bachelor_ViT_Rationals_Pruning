@@ -33,7 +33,7 @@ from dataset2 import train_data, test_data, valid_data, train_loader, test_loade
 
 # Hyperparameters
 # Training settings
-epochs = 20 #20
+epochs = 50 #20
 
 # when changing numbers the hyperparameters of the models have to be adjustet in a matter fit for the dataset
 model = vit_loader("simple") # "simple" or "efficient"
@@ -48,5 +48,5 @@ optimizer = torch.optim.Adam(params=model.parameters(),
                              weight_decay=0.3) # from the ViT paper section 4.1 (Training & Fine-tuning) and Table 3 for ViT-* ImageNet-1k
 """
 
-trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=True, accelerator='cuda')
+trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=False)
 trainer.fit(model, train_loader, valid_loader)

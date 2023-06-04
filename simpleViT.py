@@ -35,7 +35,7 @@ class FeedForward(pl.LightningModule):
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
-            RationalsModel(), #nn.PReLU(), RationalsModel(),
+            nn.PReLU(), #nn.PReLU(), RationalsModel(),
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
@@ -168,8 +168,8 @@ class simple_ViT(pl.LightningModule):
             preds = torch.argmax(val_pred_logits, dim=1)
             acc = torch.mean((preds == y).float())
 
-            self.log('val_loss', on_epoch=True, prog_bar=True, logger=True)
-            self.log('val_acc', on_epoch=True, prog_bar=True, logger=True)
+            self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
+            self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
     

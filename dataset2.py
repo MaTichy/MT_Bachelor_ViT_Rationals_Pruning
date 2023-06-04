@@ -51,8 +51,8 @@ test_transform = transforms.Compose([
     transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
 ])
 
-train_val_set = datasets.SVHN(root='../data/SVHN', split='train', download=True, transform=train_transform)
-test_data = datasets.SVHN(root='../data/SVHN', split='test', download=True, transform=test_transform)
+train_val_set = datasets.SVHN(root='./data/SVHN', split='train', download=True, transform=train_transform)
+test_data = datasets.SVHN(root='./data/SVHN', split='test', download=True, transform=test_transform)
 
 # Accessing labels for training/validation set
 train_val_labels = train_val_set.labels
