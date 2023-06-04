@@ -26,3 +26,5 @@ mtenv/
 
 # data 
 data/
+
+lightning_logs/

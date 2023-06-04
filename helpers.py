@@ -80,7 +80,6 @@ if torch.cuda.is_available():
 else:
     device = torch.device("cpu")
     NUM_WORKERS = os.cpu_count()
-#NUM_WORKERS = os.cpu_count()
 
 def create_dataloaders(
     train_dir: str, 

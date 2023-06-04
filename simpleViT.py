@@ -29,20 +29,20 @@ def posemb_sincos_2d(patches, temperature = 10000, dtype = torch.float32):
 
 # classes
 
-class FeedForward(nn.Module):
+class FeedForward(pl.LightningModule):
     def __init__(self, dim, hidden_dim):
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
-            nn.PReLU(), #nn.PReLU(), RationalsModel(),
+            RationalsModel(), #nn.PReLU(), RationalsModel(),
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
         #print(f'Input shape1: {x.shape}')
         return self.net(x)
 
-class Attention(nn.Module):
+class Attention(pl.LightningModule):
     def __init__(self, dim, heads, dim_head): 
         super().__init__()
         inner_dim = dim_head *  heads
@@ -69,7 +69,7 @@ class Attention(nn.Module):
         out = rearrange(out, 'b h n d -> b n (h d)')
         return self.to_out(out)
 
-class Transformer(nn.Module):
+class Transformer(pl.LightningModule):
     def __init__(self, dim, depth, heads, dim_head, mlp_dim):
         super().__init__()
         self.layers = nn.ModuleList([])
@@ -132,9 +132,6 @@ class simple_ViT(pl.LightningModule):
 
     def training_step(self, dataloader, batch_idx):
 
-        # Setup train loss and train accuracy values
-        train_loss, train_acc = 0, 0
-
         # Loop through data loader data batches
         X,y = dataloader
 
@@ -143,28 +140,37 @@ class simple_ViT(pl.LightningModule):
 
         loss_fn = nn.CrossEntropyLoss()
         loss = loss_fn(y_pred, y)
-        self.log('train_loss', loss)
+
+        # Compute accuracy
+        preds = torch.argmax(y_pred, dim=1)
+        acc = torch.mean((preds == y).float())
+
+        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_acc', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 
     def validation_step(self, dataloader, batch_idx):
 
-        # Setup test loss and test accuracy values
-        val_loss, val_acc = 0, 0
-
         # Turn on inference context manager
         with torch.inference_mode():
             # Loop through DataLoader batches
-                X,y = dataloader
+            X,y = dataloader
 
-                # 1. Forward pass
-                val_pred_logits = self(X)
+            # 1. Forward pass
+            val_pred_logits = self(X)
 
-                loss_fn = nn.CrossEntropyLoss()
-                # 2. Calculate and accumulate loss
-                loss = loss_fn(val_pred_logits, y)
-                self.log('train_loss', loss)
+            loss_fn = nn.CrossEntropyLoss()
+            # 2. Calculate and accumulate loss
+            loss = loss_fn(val_pred_logits, y)
+
+            # Compute accuracy
+            preds = torch.argmax(val_pred_logits, dim=1)
+            acc = torch.mean((preds == y).float())
+
+            self.log('val_loss', on_epoch=True, prog_bar=True, logger=True)
+            self.log('val_acc', on_epoch=True, prog_bar=True, logger=True)
 
         return loss
-
+    
 

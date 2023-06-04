@@ -19,7 +19,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 # Set the batch size
-BATCH_SIZE = 64 #64, 128
+BATCH_SIZE = 128 #64, 128
 seed = 42   #42
 
 # svhn 32x32
@@ -70,9 +70,9 @@ train_data, valid_data = train_test_split(train_val_set,
 
 
 
-train_loader = torch.utils.data.DataLoader(train_data, shuffle=True, batch_size=BATCH_SIZE, drop_last=True)
-valid_loader = torch.utils.data.DataLoader(valid_data, shuffle=False, batch_size=BATCH_SIZE, drop_last=True)
-test_loader = torch.utils.data.DataLoader(test_data, shuffle=False, batch_size=BATCH_SIZE, drop_last=True)
+train_loader = torch.utils.data.DataLoader(train_data, shuffle=True, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
+valid_loader = torch.utils.data.DataLoader(valid_data, shuffle=False, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
+test_loader = torch.utils.data.DataLoader(test_data, shuffle=False, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
 
 
 print(len(train_loader), len(valid_loader), len(test_loader))
