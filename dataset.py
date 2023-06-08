@@ -1,12 +1,6 @@
 import torch
-import torchvision
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-
-from torch import nn
-from torchinfo import summary
-
-import matplotlib.pyplot as plt
 
 from helpers import download_data, create_dataloaders
 
@@ -15,7 +9,6 @@ from os import getcwd
 
 import random
 import numpy as np
-import pathlib as Path
 
 # Set the batch size
 # 32 # this is lower than the ViT paper but it's because we're starting small

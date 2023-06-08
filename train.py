@@ -1,42 +1,31 @@
-from __future__ import print_function
-
-import glob
-from itertools import chain
-import os
-import random
-import zipfile
-import csv
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from linformer import Linformer
-from PIL import Image
-from sklearn.model_selection import train_test_split
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader, Dataset
-from torchvision import datasets, transforms
-from tqdm.notebook import tqdm
 import lightning as pl
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+from lightning.pytorch.callbacks import StochasticWeightAveraging
 
 from vit_loader import vit_loader
 
-from torchinfo import summary
+# change depending on dataset: for tiny images: dataset and for svhn: dataset2, dataset3 = svhn as LightningModule
+from dataset2 import train_loader, valid_loader #test_loader,
+from dataset2 import seed_everything, seed
+#from dataset3 import SVHNDataModule
 
-# change depending on dataset: for tiny images: dataset and for svhn: dataset2
-from dataset2 import train_data, test_data, valid_data, train_loader, test_loader, valid_loader, seed, BATCH_SIZE
+# set Tensorboard debugger
+# tf.debugging.experimental.enable_dump_debug_info("../lightning_logs/", tensor_debug_mode="FULL_HEALTH", circular_buffer_size=-1)
 
+#svhn_datamodule = SVHNDataModule()
 
-# Hyperparameters
-# Training settings
-epochs = 50 #20
+#seed
+seed_everything(seed)
 
-# when changing numbers the hyperparameters of the models have to be adjustet in a matter fit for the dataset
-model = vit_loader("simple") # "simple" or "efficient"
+# set epochs
+epochs = 40 #20
+
+# choose model
+model = vit_loader("efficient") # "simple" or "efficient"
+
+# lightning Trainer 
+trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=False, accelerator='auto', callbacks=[StochasticWeightAveraging(swa_lrs=2e-4)]) # precision="16-mixed" callbacks=[EarlyStopping(monitor="val_loss", mode="min")]
+trainer.fit(model, train_loader, valid_loader) # train_loader, valid_loader / svhn_datamodule 
 
 
 """
@@ -47,6 +36,3 @@ optimizer = torch.optim.Adam(params=model.parameters(),
                              betas=(0.9, 0.999), # default values but also mentioned in ViT paper section 4.1 (Training & Fine-tuning)
                              weight_decay=0.3) # from the ViT paper section 4.1 (Training & Fine-tuning) and Table 3 for ViT-* ImageNet-1k
 """
-
-trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=False)
-trainer.fit(model, train_loader, valid_loader)

@@ -8,6 +8,10 @@ from rationals import RationalsModel
 
 import lightning as pl
 
+from torchmetrics import Accuracy  
+
+from warmupScheduler import LinearWarmupCosineAnnealingLR
+
 
 # helpers
 
@@ -93,6 +97,11 @@ class simple_ViT(pl.LightningModule):
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
 
+        # new PL attributes: 
+        self.train_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) 
+        self.val_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) 
+        #self.test_acc = Accuracy()  
+
         assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
 
         num_patches = (image_height // patch_height) * (image_width // patch_width)
@@ -126,51 +135,69 @@ class simple_ViT(pl.LightningModule):
         x = self.to_latent(x)
         return self.linear_head(x)
     
+    """
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=3e-4)
-        return optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=3e-4) #weight_decay=0.003, fused=True !!lr: 3e-4!!
 
-    def training_step(self, dataloader, batch_idx):
+        return optimizer
+    """
+    
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3, fused=True) # 3e-5, 3e-4, 3e-3, 4e-5, 4e-4, 4e-3, 5e-5, ...  weight_decay=0.05,
+        scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=5, warmup_start_lr=5e-3, eta_min=3e-4, max_epochs=35) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
+        
+        return {
+        'optimizer': optimizer,
+        'lr_scheduler': scheduler
+        }
+    
+    def training_step(self, batch, batch_idx):
 
         # Loop through data loader data batches
-        X,y = dataloader
+        x,y = batch #X
 
         # 1. Forward pass
-        y_pred = self(X)
+        y_pred = self(x) #X
 
+        # define loss
         loss_fn = nn.CrossEntropyLoss()
+        # 2. Calculate loss
         loss = loss_fn(y_pred, y)
 
         # Compute accuracy
         preds = torch.argmax(y_pred, dim=1)
-        acc = torch.mean((preds == y).float())
+        #acc = torch.mean((preds == y).float())
+        self.train_acc.update(preds, y) 
 
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log('train_acc', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        #self.log('train_acc', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train_acc", self.train_acc.compute(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 
-    def validation_step(self, dataloader, batch_idx):
+    def validation_step(self, batch, batch_idx):
 
         # Turn on inference context manager
         with torch.inference_mode():
             # Loop through DataLoader batches
-            X,y = dataloader
+            x,y = batch #X
 
             # 1. Forward pass
-            val_pred_logits = self(X)
+            val_pred_logits = self(x) #X
 
+            # define loss
             loss_fn = nn.CrossEntropyLoss()
             # 2. Calculate and accumulate loss
             loss = loss_fn(val_pred_logits, y)
 
             # Compute accuracy
             preds = torch.argmax(val_pred_logits, dim=1)
-            acc = torch.mean((preds == y).float())
+            self.val_acc.update(preds, y) 
+            #acc = torch.mean((preds == y).float())
 
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
-            self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
+            #self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
+            self.log("val_acc", self.val_acc.compute(), prog_bar=True, logger=True) 
 
         return loss
-    
 

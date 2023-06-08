@@ -5,6 +5,8 @@ import torch.nn.functional as F
 
 from reversible import ReversibleSequence, SequentialSequence
 
+import lightning as pl
+
 # helper functions
 
 def default(val, default_val):
@@ -18,14 +20,14 @@ def init_(tensor):
 
 # helper classes
 
-class Residual(nn.Module):
+class Residual(pl.LightningModule):
     def __init__(self, fn):
         super().__init__()
         self.fn = fn
     def forward(self, x):
         return x + self.fn(x)
 
-class PreNorm(nn.Module):
+class PreNorm(pl.LightningModule):
     def __init__(self, dim, fn):
         super().__init__()
         self.fn = fn
@@ -42,7 +44,7 @@ GELU = nn.GELU if hasattr(nn, 'GELU') else GELU_
 
 #swap activation function here 
 
-class FeedForward(nn.Module):
+class FeedForward(pl.LightningModule):
     def __init__(self, dim, mult = 4, dropout = 0., activation = None, glu = False):
         super().__init__()
         activation = default(activation, GELU)
@@ -65,7 +67,7 @@ class FeedForward(nn.Module):
         x = self.w2(x)
         return x
 
-class LinformerSelfAttention(nn.Module):
+class LinformerSelfAttention(pl.LightningModule):
     def __init__(self, dim, seq_len, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, dropout = 0.):
         super().__init__()
         assert (dim % heads) == 0, 'dimension must be divisible by the number of heads'
@@ -131,7 +133,7 @@ class LinformerSelfAttention(nn.Module):
         out = out.transpose(1, 2).reshape(b, n, -1)
         return self.to_out(out)
 
-class Linformer(nn.Module):
+class Linformer(pl.LightningModule):
     def __init__(self, dim, seq_len, depth, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, reversible = False, dropout = 0.):
         super().__init__()
         layers = nn.ModuleList([])
@@ -150,7 +152,7 @@ class Linformer(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-class LinformerLM(nn.Module):
+class LinformerLM(pl.LightningModule):
     def __init__(self, num_tokens, dim, seq_len, depth, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, reversible = False, dropout = 0.):
         super().__init__()
         self.token_emb = nn.Embedding(num_tokens, dim)

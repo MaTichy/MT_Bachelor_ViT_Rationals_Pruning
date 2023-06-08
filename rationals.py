@@ -46,8 +46,7 @@ class RationalsModel(nn.Module):
         :param x: Compute the polynomial
         :return: A tensor of shape (n_samples, 1)
         """
-        x_tensor = x.clone().detach().to(device)
-        #device = x_tensor.device
+        x_tensor = torch.tensor(x)
         
         
         n_coeffs = self.coefficients[: self.n + 1]
