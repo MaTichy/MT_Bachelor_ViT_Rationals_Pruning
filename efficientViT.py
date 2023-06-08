@@ -63,21 +63,21 @@ class ViT(pl.LightningModule):
         x = self.to_latent(x)
         return self.mlp_head(x)
     
-    
+    """
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, fused=True) #weight_decay=0.003, fused=True !!lr: 3e-4!!
 
         return optimizer
     """
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=3e-4, fused=True) # 3e-5, 3e-4, 3e-3, 4e-5, 4e-4, 4e-3, 5e-4, 0,0001! ... weight_decay=0.005
-        scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=2, warmup_start_lr=5e-4, eta_min=1e-4, max_epochs=12) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, fused=True) # 3e-5, 3e-4, 3e-3, 4e-5, 4e-4, 4e-3, 5e-4, 0,0001! ... weight_decay=0.005
+        scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=10, warmup_start_lr=2e-4, eta_min=8e-5, max_epochs=26) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
         
         return {
         'optimizer': optimizer,
         'lr_scheduler': scheduler
         }
-    """
+    
     def training_step(self, batch, batch_idx):
 
         # Loop through data loader data batches
