@@ -38,6 +38,7 @@ def vit_loader(args):
             num_classes=10, # 200 tiny / 10 svhn
             transformer=efficient_transformer, # efficient_transformer
             channels=3, # 3
+            lr=0.0001445439770745928
         )
     return model   
             

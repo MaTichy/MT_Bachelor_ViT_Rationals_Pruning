@@ -14,14 +14,16 @@ def pair(t):
     return t if isinstance(t, tuple) else (t, t)
 
 class ViT(pl.LightningModule):
-    def __init__(self, *, image_size, patch_size, num_classes, dim, transformer, pool = 'cls', channels = 3):
+    def __init__(self, *, image_size, patch_size, num_classes, dim, transformer, pool = 'cls', channels = 3, lr):
         super().__init__()
 
         # new PL attributes: 
         self.train_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) 
         self.valid_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) 
-        #self.test_acc = Accuracy()  
+        #self.test_acc = Accuracy() 
 
+        self.lr=lr 
+         
         image_size_h, image_size_w = pair(image_size)
         assert image_size_h % patch_size == 0 and image_size_w % patch_size == 0, 'image dimensions must be divisible by the patch size'
         assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
@@ -63,7 +65,7 @@ class ViT(pl.LightningModule):
     
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.001) #weight_decay=0.003, fused=True !!lr: 3e-4!!
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, fused=True) #weight_decay=0.003, fused=True !!lr: 3e-4!!
 
         return optimizer
     """
@@ -103,26 +105,26 @@ class ViT(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
 
         # Turn on inference context manager
-        with torch.inference_mode():
-            # Loop through DataLoader batches
-            x,y = batch #X
+        #with torch.inference_mode():
+        # Loop through DataLoader batches
+        x,y = batch #X
 
-            # 1. Forward pass
-            val_pred_logits = self(x) #X
+        # 1. Forward pass
+        val_pred_logits = self(x) #X
 
-            # define loss
-            loss_fn = nn.CrossEntropyLoss()
-            # 2. Calculate and accumulate loss
-            loss = loss_fn(val_pred_logits, y)
+        # define loss
+        loss_fn = nn.CrossEntropyLoss()
+        # 2. Calculate and accumulate loss
+        loss = loss_fn(val_pred_logits, y)
 
-            # Compute accuracy
-            preds = torch.argmax(val_pred_logits, dim=1)
-            self.valid_acc.update(preds, y) 
-            acc = torch.mean((preds == y).float())
+        # Compute accuracy
+        preds = torch.argmax(val_pred_logits, dim=1)
+        self.valid_acc.update(preds, y) 
+        #acc = torch.mean((preds == y).float())
 
-            self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
-            #self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
-            self.log("val_acc", self.valid_acc.compute(), prog_bar=True, logger=True) 
+        self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
+        #self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val_acc", self.valid_acc.compute(), prog_bar=True, logger=True) 
 
         return loss
     
