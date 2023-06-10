@@ -20,14 +20,14 @@ def init_(tensor):
 
 # helper classes
 
-class Residual(pl.LightningModule):
+class Residual(nn.Module):
     def __init__(self, fn):
         super().__init__()
         self.fn = fn
     def forward(self, x):
         return x + self.fn(x)
 
-class PreNorm(pl.LightningModule):
+class PreNorm(nn.Module):
     def __init__(self, dim, fn):
         super().__init__()
         self.fn = fn
@@ -68,7 +68,7 @@ class FeedForward(pl.LightningModule):
         return x
 
 class LinformerSelfAttention(pl.LightningModule):
-    def __init__(self, dim, seq_len, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, dropout = 0.):
+    def __init__(self, dim, seq_len, k = 64, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, dropout = 0.):
         super().__init__()
         assert (dim % heads) == 0, 'dimension must be divisible by the number of heads'
 
@@ -134,7 +134,7 @@ class LinformerSelfAttention(pl.LightningModule):
         return self.to_out(out)
 
 class Linformer(pl.LightningModule):
-    def __init__(self, dim, seq_len, depth, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, reversible = False, dropout = 0.):
+    def __init__(self, dim, seq_len, depth, k = 64, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, reversible = False, dropout = 0.):
         super().__init__()
         layers = nn.ModuleList([])
         for _ in range(depth):
@@ -153,7 +153,7 @@ class Linformer(pl.LightningModule):
         return self.net(x)
 
 class LinformerLM(pl.LightningModule):
-    def __init__(self, num_tokens, dim, seq_len, depth, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, reversible = False, dropout = 0.):
+    def __init__(self, num_tokens, dim, seq_len, depth, k = 64, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, reversible = False, dropout = 0.):
         super().__init__()
         self.token_emb = nn.Embedding(num_tokens, dim)
         self.pos_emb = nn.Embedding(seq_len, dim)

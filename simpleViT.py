@@ -11,6 +11,7 @@ import lightning as pl
 from torchmetrics import Accuracy  
 
 from warmupScheduler import LinearWarmupCosineAnnealingLR
+from torch.optim.lr_scheduler import StepLR
 
 
 # helpers
@@ -47,7 +48,7 @@ class FeedForward(pl.LightningModule):
         return self.net(x)
 
 class Attention(pl.LightningModule):
-    def __init__(self, dim, heads, dim_head): 
+    def __init__(self, dim, heads=8, dim_head=64): 
         super().__init__()
         inner_dim = dim_head *  heads
         self.heads = heads
@@ -92,10 +93,12 @@ class Transformer(pl.LightningModule):
         return x
 
 class simple_ViT(pl.LightningModule):
-    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64):
+    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, lr):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
+
+        self.lr=lr
 
         # new PL attributes: 
         self.train_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) 
@@ -135,11 +138,12 @@ class simple_ViT(pl.LightningModule):
         x = self.to_latent(x)
         return self.linear_head(x)
     
-    """
+    
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=3e-4) #weight_decay=0.003, fused=True !!lr: 3e-4!!
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=0.0) #weight_decay=0.003, fused=True !!lr: 3e-4!!
+        scheduler = StepLR(optimizer, step_size=2, gamma=0.7)
 
-        return optimizer
+        return [optimizer],[scheduler]
     """
     
     def configure_optimizers(self):
@@ -150,7 +154,7 @@ class simple_ViT(pl.LightningModule):
         'optimizer': optimizer,
         'lr_scheduler': scheduler
         }
-    
+    """
     def training_step(self, batch, batch_idx):
 
         # Loop through data loader data batches
@@ -177,27 +181,25 @@ class simple_ViT(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
 
-        # Turn on inference context manager
-        with torch.inference_mode():
-            # Loop through DataLoader batches
-            x,y = batch #X
+        # Loop through DataLoader batches
+        x,y = batch #X
 
-            # 1. Forward pass
-            val_pred_logits = self(x) #X
+        # 1. Forward pass
+        val_pred_logits = self(x) #X
 
-            # define loss
-            loss_fn = nn.CrossEntropyLoss()
-            # 2. Calculate and accumulate loss
-            loss = loss_fn(val_pred_logits, y)
+        # define loss
+        loss_fn = nn.CrossEntropyLoss()
+        # 2. Calculate and accumulate loss
+        loss = loss_fn(val_pred_logits, y)
 
-            # Compute accuracy
-            preds = torch.argmax(val_pred_logits, dim=1)
-            self.val_acc.update(preds, y) 
-            #acc = torch.mean((preds == y).float())
+        # Compute accuracy
+        preds = torch.argmax(val_pred_logits, dim=1)
+        self.val_acc.update(preds, y) 
+        #acc = torch.mean((preds == y).float())
 
-            self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
-            #self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
-            self.log("val_acc", self.val_acc.compute(), prog_bar=True, logger=True) 
+        self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
+        #self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val_acc", self.val_acc.compute(), prog_bar=True, logger=True) 
 
         return loss
 

@@ -22,10 +22,10 @@ seed_everything(seed)
 epochs = 40 #20
 
 # choose model
-model = vit_loader("efficient") # "simple" or "efficient"
+model = vit_loader("simple") # "simple" or "efficient"
 
 # lightning Trainer 
-trainer = pl.Trainer(max_epochs=epochs, limit_train_batches=0.25, limit_val_batches=0.25, fast_dev_run=False, accelerator='auto', callbacks=[StochasticWeightAveraging(swa_lrs=2e-5)]) # precision="16-mixed" callbacks=[EarlyStopping(monitor="val_loss", mode="min")]
+trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=False, limit_train_batches=0.25, limit_val_batches=0.25) # precision="16-mixed" callbacks=[EarlyStopping(monitor="val_loss", mode="min")], callbacks=[StochasticWeightAveraging(swa_lrs=2e-5)], accelerator='auto' imit_train_batches=0.7, limit_val_batches=0.7,
 trainer.fit(model, train_loader, valid_loader) # train_loader, valid_loader / svhn_datamodule 
 
 """
