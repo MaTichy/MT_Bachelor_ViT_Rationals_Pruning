@@ -19,7 +19,7 @@ from dataset2 import seed_everything, seed
 seed_everything(seed)
 
 # set epochs
-epochs = 40 #20
+epochs = 50 #20
 
 # choose model
 model = vit_loader("simple") # "simple" or "efficient"
@@ -27,12 +27,3 @@ model = vit_loader("simple") # "simple" or "efficient"
 # lightning Trainer 
 trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=False, limit_train_batches=0.25, limit_val_batches=0.25) # precision="16-mixed" callbacks=[EarlyStopping(monitor="val_loss", mode="min")], callbacks=[StochasticWeightAveraging(swa_lrs=2e-5)], accelerator='auto' imit_train_batches=0.7, limit_val_batches=0.7,
 trainer.fit(model, train_loader, valid_loader) # train_loader, valid_loader / svhn_datamodule 
-
-"""
-# for tiny adjust weight decay original 0.3
-# Setup the optimizer to optimize our ViT model parameters using hyperparameters from the ViT paper 
-optimizer = torch.optim.Adam(params=model.parameters(), 
-                             lr=3e-5, # Base LR from Table 3 for ViT-* ImageNet-1k (3e-3 eigentlich)
-                             betas=(0.9, 0.999), # default values but also mentioned in ViT paper section 4.1 (Training & Fine-tuning)
-                             weight_decay=0.3) # from the ViT paper section 4.1 (Training & Fine-tuning) and Table 3 for ViT-* ImageNet-1k
-"""

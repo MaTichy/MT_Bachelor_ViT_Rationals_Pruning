@@ -8,7 +8,7 @@ import lightning as pl
 
 from torchmetrics import Accuracy  
 
-from warmupScheduler import LinearWarmupCosineAnnealingLR
+#from warmupScheduler import LinearWarmupCosineAnnealingLR
 from torch.optim.lr_scheduler import StepLR
 
 def pair(t):

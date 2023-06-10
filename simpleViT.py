@@ -10,7 +10,7 @@ import lightning as pl
 
 from torchmetrics import Accuracy  
 
-from warmupScheduler import LinearWarmupCosineAnnealingLR
+#from warmupScheduler import LinearWarmupCosineAnnealingLR
 from torch.optim.lr_scheduler import StepLR
 
 
@@ -147,7 +147,7 @@ class simple_ViT(pl.LightningModule):
     """
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3, fused=True) # 3e-5, 3e-4, 3e-3, 4e-5, 4e-4, 4e-3, 5e-5, ...  weight_decay=0.05,
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3, fused=True) # 3e-5, 3e-4, 3e-3, 4e-5, 4e-4, 4e-3, 5e-5, ...
         scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=5, warmup_start_lr=5e-3, eta_min=3e-4, max_epochs=35) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
         
         return {
