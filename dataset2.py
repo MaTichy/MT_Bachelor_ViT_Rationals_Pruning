@@ -10,7 +10,7 @@ import random
 import numpy as np
 
 # Set the batch size
-BATCH_SIZE = 64 #128, 64 
+BATCH_SIZE = 32 #128, 64 
 seed = 42   #42
 
 # svhn 32x32
@@ -28,31 +28,21 @@ def seed_everything(seed):
 seed_everything(seed)
 
 """
+   transforms.RandomApply(
+        [transforms.RandomResizedCrop(IMG_SIZE)], 
+        p=0.2),
     transforms.RandomApply(
-        [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
-        p=0.8,),
-
-    transforms.Resize((IMG_SIZE,IMG_SIZE)), 
-    transforms.RandomApply(
-    [transforms.RandomResizedCrop(IMG_SIZE)], p=0.2),
-    transforms.RandomGrayscale(p=0.2), #p=0.2 20 percent of images transformed to grayscale
-    transforms.RandomApply(
-        [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)],
-        p=0.3),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomGrayscale(p=0.2), #p=0.2 20 percent of images transformed to grayscale
+        [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2)],
+        p=0.6),
+    transforms.RandomGrayscale(p=0.3),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
 
     #transforms.Resize((IMG_SIZE,IMG_SIZE)), 
     #transforms.CenterCrop(IMG_SIZE),
 """
 
 train_transform = transforms.Compose([
-    transforms.RandomApply(
-        [transforms.RandomResizedCrop(IMG_SIZE)], 
-        p=0.2),
-    transforms.RandomApply(
-        [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2)],
-        p=0.3),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
 ])

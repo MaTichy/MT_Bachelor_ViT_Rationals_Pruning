@@ -14,7 +14,7 @@ def vit_loader(args):
             depth = 6, # 6 Number of Transformer blocks. 9
             heads = 12, # 16 Number of heads in Multi-head Attention layer. 12
             mlp_dim = 2048, # 2048 Dimension of the MLP (FeedForward) layer.
-            lr=3e-5 # 4.365158322401661e-05 ideal lr
+            lr=3e-5 # 4.365158322401661e-05 /e-06 ideal initial lr
         )
     
     elif(args == "efficient"):
@@ -25,21 +25,21 @@ def vit_loader(args):
         """
         
         efficient_transformer = Linformer(
-            dim=256, #128 256
-            seq_len=64+1,  # 8x8 patches + 1 cls-token 64+1 256+1
+            dim=128, #128 256
+            seq_len=64+1,  # 8x8 patches + 1 cls-token / 64+1, 256+1
             depth=12,
-            heads=16, #8 16
-            k=64 #64 128 input length
+            heads=8, #8, 16
+            k=32 #32, 64, 128 input length
         )
 
         model = ViT(
-            dim=256, # 128 256
+            dim=128, # 128 256
             image_size=32, # 64 tiny / 32 svhn 224
             patch_size=4, # 8 tiny / 4 svhn , 2
             num_classes=10, # 200 tiny / 10 svhn
             transformer=efficient_transformer, # efficient_transformer
             channels=3, # 3
-            lr=0.001445439770745928 # 0.0001445439770745928 ideal lr
+            lr=1e-3 # 0.0001445439770745928 ideal initial lr 8.317637711026709e-4 
         )
     return model   
             
