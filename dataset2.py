@@ -43,6 +43,13 @@ seed_everything(seed)
 """
 
 train_transform = transforms.Compose([
+    transforms.RandomApply(
+        [transforms.RandomResizedCrop(IMG_SIZE)], 
+        p=0.2),
+    transforms.RandomApply(
+        [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2)],
+        p=0.6),
+    transforms.RandomGrayscale(p=0.3),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
 ])

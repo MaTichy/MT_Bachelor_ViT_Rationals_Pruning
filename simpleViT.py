@@ -34,20 +34,20 @@ def posemb_sincos_2d(patches, temperature = 10000, dtype = torch.float32):
 
 # classes
 
-class FeedForward(pl.LightningModule):
+class FeedForward(nn.Module):
     def __init__(self, dim, hidden_dim):
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
-            nn.PReLU(), #nn.PReLU(), RationalsModel(),
+            nn.ReLU(), #nn.PReLU(), RationalsModel(),
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
         #print(f'Input shape1: {x.shape}')
         return self.net(x)
 
-class Attention(pl.LightningModule):
+class Attention(nn.Module):
     def __init__(self, dim, heads=8, dim_head=64): 
         super().__init__()
         inner_dim = dim_head *  heads
@@ -141,7 +141,7 @@ class simple_ViT(pl.LightningModule):
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=0.0) #weight_decay=0.003, fused=True !!lr: 3e-4!!
-        scheduler = StepLR(optimizer, step_size=2, gamma=0.7)
+        scheduler = StepLR(optimizer, step_size=1, gamma=0.7)
 
         return [optimizer],[scheduler]
     """
