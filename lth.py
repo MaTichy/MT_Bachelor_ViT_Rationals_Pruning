@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
 import lightning as pl
+from datetime import datetime
 from vit_loader import vit_loader
 from dataset2 import seed, seed_everything, train_loader, valid_loader
 
@@ -54,3 +55,16 @@ for iteration in range(pruning_iterations):
 
     # Update the prune ratio for the next iteration
     prune_ratio += prune_ratio_decay
+
+
+if not os.path.exists('pruned_models'):
+    os.makedirs('pruned_models')
+
+# Get the current date and time
+now = datetime.now()
+
+# Format the date and time as a string
+timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+
+# Save your model in the 'pruned_models' directory with a unique name
+torch.save(trained_model, f'pruned_models/model_{timestamp}.pth')

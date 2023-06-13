@@ -441,3 +441,6 @@ train_and_prune(model, train_loader, valid_loader, epochs)
 #for name, module in model.named_modules():
 #    if isinstance(module, nn.Linear):
 #        prune.l1_unstructured(module, name='weight', amount=0)
+
+#pruned_model_path ="/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_196/checkpoints/epoch=0-step=457.ckpt"
+#model_pruned_final = model.load_from_checkpoint(checkpoint_path=pruned_model_path)

@@ -4,9 +4,16 @@ import lightning as pl
 import torch.nn.utils.prune as prune
 
 from dataset2 import train_loader, valid_loader, seed, seed_everything
-from train import model
+from vit_loader import vit_loader
 
+#model
+model = vit_loader('simple')
+
+#seed
 seed_everything(seed)
+
+#epochs
+epochs = 5
 
 def compute_stats(model):
     total_params = 0
@@ -25,12 +32,7 @@ def compute_stats(model):
 
     return stats
 
-#
-epochs = 5
-
-pruned_model_path ="/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_196/checkpoints/epoch=0-step=457.ckpt"
-
-model_pruned_final = model.load_from_checkpoint(checkpoint_path=pruned_model_path)
+model_pruned_final = torch.load("/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-13_10-07-01.pth")
 
 #compute_stats(model_pruned_final)
 

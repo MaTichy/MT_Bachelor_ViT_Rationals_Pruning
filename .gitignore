@@ -28,3 +28,5 @@ mtenv/
 data/
 
 lightning_logs/
+
+pruned_models/
