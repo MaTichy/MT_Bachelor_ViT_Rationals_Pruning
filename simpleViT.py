@@ -95,6 +95,8 @@ class Transformer(pl.LightningModule):
 class simple_ViT(pl.LightningModule):
     def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, lr):
         super().__init__()
+
+        self.save_hyperparameters()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
 

@@ -1,4 +1,5 @@
 import lightning as pl
+import copy
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 from lightning.pytorch.callbacks import StochasticWeightAveraging
 from lightning.pytorch.tuner.tuning import Tuner
