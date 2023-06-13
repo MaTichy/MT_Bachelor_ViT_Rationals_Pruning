@@ -13,7 +13,7 @@ model = vit_loader('simple')
 seed_everything(seed)
 
 #epochs
-epochs = 5
+epochs = 10
 
 def compute_stats(model):
     total_params = 0
@@ -36,6 +36,6 @@ model_pruned_final = torch.load("/home/paperspace/Desktop/MT_Bachelor_ViT_Ration
 
 #compute_stats(model_pruned_final)
 
-# final train pruned model 
+# 4. final train pruned model with unpruned weights initialized from model_copy at start when initializing the model
 trainer_final = pl.Trainer(max_epochs=epochs, fast_dev_run=False, limit_train_batches=0.5, limit_val_batches=0.5)
 trainer_final.fit(model_pruned_final, train_loader, valid_loader)
