@@ -8,7 +8,7 @@ import torch.nn as nn
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class RationalsModel(nn.Module):
-    # n = batch size-1 (svhn 64 /tiny 256), m = number of hidden layers
+    # n = batch size-1 (svhn 64 /tiny 256), m = 64 number of hidden layers
     def __init__(self, n=63, m=64, function="relu", use_coefficients=False):
         """
         The __init__ function is called when the class is instantiated.

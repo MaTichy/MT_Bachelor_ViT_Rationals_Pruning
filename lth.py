@@ -44,12 +44,12 @@ prune_ratio_decay = (1 - prune_ratio) / pruning_iterations
 
 
 #2. Trained model that converges - val_acc = 90%
-trained_model_path = "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_192/checkpoints/epoch=48-step=112161.ckpt"
+trained_model_path = "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_193/checkpoints/epoch=4-step=11445.ckpt" # "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_192/checkpoints/epoch=48-step=112161.ckpt"
 trained_model = model.load_from_checkpoint(checkpoint_path=trained_model_path)
 
 # 3. Iterative pruning and reinitialization
 for iteration in range(pruning_iterations):
-    trainer_prune=pl.Trainer(max_epochs=1, fast_dev_run=False, limit_train_batches=0.2, limit_val_batches=0.2, enable_checkpointing=True)
+    trainer_prune=pl.Trainer(max_epochs=1, fast_dev_run=False) # limit_train_batches=0.2, limit_val_batches=0.2, enable_checkpointing=True
     # Prune the model weights
     for name, module in trained_model.named_modules():
         if isinstance(module, nn.Linear):

@@ -172,11 +172,9 @@ class simple_ViT(pl.LightningModule):
 
         # Compute accuracy
         preds = torch.argmax(y_pred, dim=1)
-        #acc = torch.mean((preds == y).float())
         self.train_acc.update(preds, y) 
 
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        #self.log('train_acc', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.log("train_acc", self.train_acc.compute(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss

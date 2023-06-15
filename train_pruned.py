@@ -1,7 +1,8 @@
 import torch.nn as nn
 import torch
 import lightning as pl
-import torch.nn.utils.prune as prune
+from datetime import datetime
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 
 from dataset2 import train_loader, valid_loader, seed, seed_everything
 from vit_loader import vit_loader
@@ -13,7 +14,7 @@ model = vit_loader('simple')
 seed_everything(seed)
 
 #epochs
-epochs = 10
+epochs = 15
 
 def compute_stats(model):
     total_params = 0
@@ -30,12 +31,27 @@ def compute_stats(model):
         "total_pruned_ratio": total_pruned_params / total_params,
     }
 
-    return stats
+    return print(stats)
 
-model_pruned_final = torch.load("/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-13_10-07-01.pth")
+#initialize with pruned model from lth.py
+model_pruned_final = torch.load("/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-15_11-26-16.pth")#"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-13_10-07-01.pth")
 
-#compute_stats(model_pruned_final)
+# learning rate reinit
+model_pruned_final.hparams.lr = 7e-6 
+
+compute_stats(model_pruned_final)
 
 # 4. final train pruned model with unpruned weights initialized from model_copy at start when initializing the model
-trainer_final = pl.Trainer(max_epochs=epochs, fast_dev_run=False, limit_train_batches=0.5, limit_val_batches=0.5)
+trainer_final = pl.Trainer(max_epochs=epochs, fast_dev_run=False,  callbacks=[EarlyStopping(monitor="val_loss", mode="min", patience=2)]) # , limit_train_batches=0.5, limit_val_batches=0.5
+
+#train
 trainer_final.fit(model_pruned_final, train_loader, valid_loader)
+
+# Get the current date and time
+now = datetime.now()
+
+# Format the date and time as a string
+timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+
+# Save your model in the 'pruned_models' directory with a unique name
+torch.save(model_pruned_final, f'pruned_models/retrained_{timestamp}.pth')
