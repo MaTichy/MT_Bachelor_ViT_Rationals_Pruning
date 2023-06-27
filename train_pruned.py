@@ -21,9 +21,10 @@ def compute_stats(model):
     total_pruned_params = 0
 
     for name, module in model.named_modules():
-        if isinstance(module, nn.Linear):
-            total_params += torch.numel(module.weight.data)
-            total_pruned_params += torch.sum(module.weight_mask == 0).item()
+        if "transformer.layers" in name and (".net.1" in name or ".net.3" in name) and isinstance(module, nn.Linear):
+            #if isinstance(module, nn.Linear):
+                total_params += torch.numel(module.weight.data)
+                total_pruned_params += torch.sum(module.weight_mask == 0).item()
 
     stats = {
         "total_params": total_params,
@@ -34,10 +35,10 @@ def compute_stats(model):
     return print(stats)
 
 #initialize with pruned model from lth.py
-model_pruned_final = torch.load("/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-15_11-26-16.pth")#"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-13_10-07-01.pth")
+model_pruned_final = torch.load("/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-27_10-57-58.pth") #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-26_20-12-58.pth" #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-15_11-26-16.pth"  #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-13_10-07-01.pth")
 
 # learning rate reinit
-model_pruned_final.hparams.lr = 7e-6 
+model_pruned_final.hparams.lr = 4e-6 
 
 compute_stats(model_pruned_final)
 

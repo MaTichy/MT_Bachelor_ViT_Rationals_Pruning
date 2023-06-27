@@ -18,10 +18,10 @@ seed_everything(seed)
 epochs = 40 #20
 
 # choose model
-model = vit_loader("efficient") # "simple" or "efficient"
+model = vit_loader("simple") # "simple" or "efficient"
 
 # lightning Trainer 
-trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=False, accelerator='auto') # precision="16-mixed" callbacks=[EarlyStopping(monitor="val_loss", mode="min")]  limit_train_batches=0.25, limit_val_batches=0.25, , callbacks=[StochasticWeightAveraging(swa_lrs=2e-4)]
+trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=False, limit_train_batches=0.7, limit_val_batches=0.7) # precision="16-mixed" callbacks=[EarlyStopping(monitor="val_loss", mode="min")]  limit_train_batches=0.25, limit_val_batches=0.25, , callbacks=[StochasticWeightAveraging(swa_lrs=2e-4)]
 
 tuner = Tuner(trainer)
 # Run learning rate finder

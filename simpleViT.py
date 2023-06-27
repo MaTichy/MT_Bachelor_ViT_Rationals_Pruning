@@ -4,13 +4,13 @@ from torch import nn
 from einops import rearrange
 from einops.layers.torch import Rearrange
 
-from rationals import RationalsModel
+import rationals
 
 import lightning as pl
 
 from torchmetrics import Accuracy  
 
-#from warmupScheduler import LinearWarmupCosineAnnealingLR
+from warmupScheduler import LinearWarmupCosineAnnealingLR
 from torch.optim.lr_scheduler import StepLR
 
 
@@ -40,7 +40,7 @@ class FeedForward(nn.Module):
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
-            nn.ReLU(), #nn.PReLU(), RationalsModel(),
+            rationals.RationalsModel(), #nn.PReLU(), nn.ReLU(), rationals.RationalsModel(), nn.GELU(), 
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
@@ -103,7 +103,7 @@ class simple_ViT(pl.LightningModule):
         self.lr=lr
 
         # new PL attributes: 
-        self.train_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) 
+        self.train_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) #top_k=1 means only if the correct output is given the answer is right, top_k=3 would mean the answer has to be in top 3 output of model for correct response
         self.val_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) 
         #self.test_acc = Accuracy()  
 
@@ -142,15 +142,15 @@ class simple_ViT(pl.LightningModule):
     
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=0.0) #weight_decay=0.003, fused=True !!lr: 3e-4!!
-        scheduler = StepLR(optimizer, step_size=1, gamma=0.7)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=0.0) #weight_decay=0.003, weight_decay=0.0 fused=True !!lr: 3e-4!!
+        scheduler = StepLR(optimizer, step_size=1, gamma=0.5) #gamma=0.6, 0.7
 
         return [optimizer],[scheduler]
     """
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3, fused=True) # 3e-5, 3e-4, 3e-3, 4e-5, 4e-4, 4e-3, 5e-5, ...
-        scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=5, warmup_start_lr=5e-3, eta_min=3e-4, max_epochs=35) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=0.0) # fused=True 3e-5, 3e-4, 3e-3, 4e-5, 4e-4, 4e-3, 5e-5, ...
+        scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=3, warmup_start_lr=5e-5, eta_min=1e-6, max_epochs=35) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
         
         return {
         'optimizer': optimizer,

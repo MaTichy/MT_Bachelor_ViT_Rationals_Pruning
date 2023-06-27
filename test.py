@@ -5,8 +5,46 @@ import torch.nn.utils.prune as prune
 import lightning as pl
 
 from vit_loader import vit_loader
-from dataset2 import seed, seed_everything, train_loader, valid_loader
+#from dataset2 import seed, seed_everything, train_loader, valid_loader
 
+import math
+
+def calculate_pruning_percentage(total_prune_percentage, iterations):
+    remaining_percentage = 1 - total_prune_percentage
+    prune_percentage_per_iteration = 1 - math.pow(remaining_percentage, 1/iterations)
+    return prune_percentage_per_iteration
+
+# Example usage:
+total_prune_percentage = 0.86  # 86% total pruning
+iterations = 3
+prune_percentage_per_iteration = calculate_pruning_percentage(total_prune_percentage, iterations)
+
+print(prune_percentage_per_iteration)
+
+"""
+model = vit_loader("simple") # "simple" or "efficient"
+
+#2. Trained model that converges - val_acc = 90%
+trained_model_path = "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_193/checkpoints/epoch=4-step=11445.ckpt" # "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_192/checkpoints/epoch=48-step=112161.ckpt"
+trained_model = model.load_from_checkpoint(checkpoint_path=trained_model_path)
+
+
+overall_pruning = 0.84  # The overall proportion of weights to prune
+pruning_iterations = 3  # The number of pruning iterations
+
+initial_prune_ratio = (2 * overall_pruning) / (pruning_iterations * (pruning_iterations + 1))
+
+print(initial_prune_ratio)
+
+#for name, module in trained_model.named_modules():
+#    if "transformer.layers" in name and (".net.1" in name or ".net.3" in name) and isinstance(module, nn.Linear):
+#        print(f"Found a linear layer in a FeedForward block of the Transformer: {name}")
+    #if "transformer.layers" in name and "FeedForward.net" in module and isinstance(module, nn.Linear):
+    #    print(f"Found a linear layer in a FeedForward block of the Transformer: {name}")
+
+#print(trained_model.named_modules())
+"""
+"""
 seed_everything(seed)
 
 # Hyperparameters
@@ -64,7 +102,7 @@ for iteration in range(pruning_iterations):
 
     # Update prune ratio for the next iteration
     prune_ratio *= prune_ratio_decay
-
+"""
 """
 import copy
 import torch

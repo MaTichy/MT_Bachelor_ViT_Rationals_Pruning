@@ -8,6 +8,7 @@ from vit_loader import vit_loader
 from dataset2 import seed, seed_everything, train_loader, valid_loader
 
 import os
+import math
 
 #utils
 current_path = os.getcwd()
@@ -36,22 +37,28 @@ model = vit_loader("simple") # "simple" or "efficient"
 # Create a copy of the model for reinitialization
 model_copy = copy.deepcopy(model)
 
-# Hyperparameters
+# Hyperparameter
 epochs = 1
-prune_ratio = 0.2
+
+def calculate_pruning_percentage(total_prune_percentage, iterations):
+    remaining_percentage = 1 - total_prune_percentage
+    prune_percentage_per_iteration = 1 - remaining_percentage ** (1 / iterations) #remaining_percentage*iterations
+    return prune_percentage_per_iteration
+
+total_prune_percentage = 0.82
 pruning_iterations = 3
-prune_ratio_decay = (1 - prune_ratio) / pruning_iterations
+prune_ratio = calculate_pruning_percentage(total_prune_percentage, pruning_iterations)
 
-
-#2. Trained model that converges - val_acc = 90%
-trained_model_path = "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_193/checkpoints/epoch=4-step=11445.ckpt" # "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_192/checkpoints/epoch=48-step=112161.ckpt"
+#2. Trained model that stopped training when val_loss doesnt improve anymore 
+trained_model_path = '/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_231/checkpoints/epoch=5-step=13734.ckpt' #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_193/checkpoints/epoch=4-step=11445.ckpt" # "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_192/checkpoints/epoch=48-step=112161.ckpt"
 trained_model = model.load_from_checkpoint(checkpoint_path=trained_model_path)
 
 # 3. Iterative pruning and reinitialization
 for iteration in range(pruning_iterations):
-    trainer_prune=pl.Trainer(max_epochs=1, fast_dev_run=False) # limit_train_batches=0.2, limit_val_batches=0.2, enable_checkpointing=True
+    trainer_prune=pl.Trainer(max_epochs=1, fast_dev_run=False, limit_train_batches=0.2, limit_val_batches=0.2) # limit_train_batches=0.2, limit_val_batches=0.2, enable_checkpointing=True
     # Prune the model weights
     for name, module in trained_model.named_modules():
+        #if "transformer.layers" in name and (".net.1" in name or ".net.3" in name) and isinstance(module, nn.Linear):
         if isinstance(module, nn.Linear):
             prune.l1_unstructured(module, name='weight', amount=prune_ratio)
 
@@ -61,17 +68,14 @@ for iteration in range(pruning_iterations):
             module.weight.data = module.weight.data.to(device)
             original_module.weight.data = original_module.weight.data.to(device)
 
-            # Reinitialize the pruned weights
+            # create mask
             mask = module.weight_mask
             mask = mask.to(device)
-            # This will replace weights where mask == 0 (i.e., the pruned weights) with their original values
+            # Reinitialize weights where mask != 0 (i.e., the unpruned weights) with their original random values before training, the pruned weights remain 0
             module.weight.data = torch.where(mask != 0, original_module.weight.data, module.weight.data)
 
     # Train the pruned model
     trainer_prune.fit(trained_model, train_loader, valid_loader)
-
-    # Update the prune ratio for the next iteration
-    prune_ratio += prune_ratio_decay
 
 
 if not os.path.exists('pruned_models'):

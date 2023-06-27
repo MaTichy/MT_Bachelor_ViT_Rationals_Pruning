@@ -14,7 +14,7 @@ def vit_loader(args):
             depth = 6, # 6 Number of Transformer blocks. 9
             heads = 12, # 16 Number of heads in Multi-head Attention layer. 12
             mlp_dim = 2048, # 2048 Dimension of the MLP (FeedForward) layer.
-            lr=3e-5 # 4.365158322401661e-05 /e-06 ideal initial lr
+            lr=5e-5 #  4.365158322401661e-05 /e-06 ideal initial lr !!!3e-5, lr find: simple, rationals: gelu : 6.3095734448019305e-6, 6e-6
         )
     
     elif(args == "efficient"):

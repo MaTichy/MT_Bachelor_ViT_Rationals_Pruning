@@ -3,40 +3,36 @@ import json
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import torch
-import torch.nn as nn
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
-class RationalsModel(nn.Module):
-    # n = batch size-1 (svhn 64 /tiny 256), m = 64 number of hidden layers
-    def __init__(self, n=63, m=64, function="relu", use_coefficients=False):
+
+class RationalsModel(torch.nn.Module):
+    def __init__(self, n=5, m=5, function="gelu", use_coefficients=True):
         """
         The __init__ function is called when the class is instantiated.
         It sets up the attributes of an instance of a class.
 
-
         :param self: Represent the instance of the class
-        :param n: Set the number of inputs to the network
-        :param m: Define the number of hidden layers
+        :param n: Set the number of coefficients of numerator
+        :param m: Set the number of coefficients of denominator
         :param function: Specify the activation function
         :param use_coefficients: Determine if the coefficients should be loaded
         from a file or not
-        :return: Nothing
         """
-        super(RationalsModel, self).__init__() #mod pytorch
+        super().__init__()
         self.n = n
         self.m = m
-        self.p = n + m
+        self.degree = n + m
         self.func_name = function
         self.function = self.load_func(func=function)
         if use_coefficients:
             self.load_coefficients()
         else:
-            self.coefficients = torch.randn(self.p + 1, requires_grad=True)
+            self.coeff_numerator = torch.randn(self.n, requires_grad=True)
+            self.coeff_denominator = torch.randn(self.m, requires_grad=True)
 
         self.function_list = ["relu", "sigmoid", "tanh", "leaky_relu", "swish", "gelu"]
-
-        self.store_coefficients()
 
     def forward(self, x):
         """
@@ -46,24 +42,21 @@ class RationalsModel(nn.Module):
         :param x: Compute the polynomial
         :return: A tensor of shape (n_samples, 1)
         """
-        x_tensor = torch.tensor(x)
-        
-        
-        n_coeffs = self.coefficients[: self.n + 1]
-        m_coeffs = self.coefficients[self.n + 1 :]
+        z = x.view(-1)
+        x_tensor = z.clone().detach().requires_grad_(True).to(device)
 
-        x_powers = torch.pow(x_tensor, torch.arange(self.n + 1, device=device).unsqueeze(1))
-        numerator = torch.matmul(n_coeffs.to(device), x_powers)
+        x_powers = torch.pow(x_tensor, torch.arange(self.n).unsqueeze(1).to(device))
+        numerator = torch.einsum('i,ij->j', self.coeff_numerator.to(device), x_powers)
 
-        x_powers = torch.pow(x_tensor, torch.arange(1, self.m + 1, device=device).unsqueeze(1))
-        denominator = torch.matmul(m_coeffs.to(device), x_powers)
+        x_powers = torch.pow(x_tensor, torch.arange(1, self.m+1).unsqueeze(1).to(device))
+        denominator = torch.einsum('i,ij->j', self.coeff_denominator.to(device), x_powers)
 
         # compute overall polynomial
         polynomial = numerator / (torch.abs(denominator) + 1)
 
-        return polynomial
+        return polynomial.view(x.shape)
 
-    def train(
+    def train_rational(
         self, name, x_train, y_train, learning_rate=0.01, num_epochs=10000, render=False
     ):
         """
@@ -76,28 +69,30 @@ class RationalsModel(nn.Module):
         calculate our predicted y value based off of our current coefficients from forward().
 
         :param self: Refer to the class instance itself
-        :param name: Save the trained model to a file
-        :param x_train: Train the model
-        :param y_train: Train the model to predict a function
-        :param learning_rate: Control the speed of learning
+        :param name: Refers to the function neme
+        :param x_train: the considered space for the training
+        :param y_train: the function to train
+        :param learning_rate: control the speed of learning
         :param num_epochs: Set the number of iterations that the model will train for
         :param render: Render the animation of the training process
         :return: The loss of the last epoch
         """
-        optimizer = torch.optim.Adam([self.coefficients], lr=learning_rate)
+
+        optimizer = torch.optim.Adam([self.coeff_numerator, self.coeff_denominator], lr=learning_rate)
         loss_fn = torch.nn.MSELoss()
-        end_loss = 100.0
+        end_loss = 0.0
 
         fig, ax = plt.subplots()
         y_pred_values = []  # Store y_pred values for plotting
         epoch_values = []  # Store epoch values for plotting
         predictions = []
         true_functions = []
+        upper_bound = 10
 
         def update_plot(epoch):
             ax.clear()
-            ax.plot(x_train.numpy(), predictions[epoch], label=f"predict {name}")
-            ax.plot(x_train.numpy(), true_functions[epoch], label=f"true {name}")
+            ax.plot(x_train.cpu().numpy(), predictions[epoch], label=f"predict {name}")
+            ax.plot(x_train.cpu().numpy(), true_functions[epoch], label=f"true {name}")
             ax.legend()
             ax.set_xlabel("x")
             ax.set_ylabel("y")
@@ -113,21 +108,23 @@ class RationalsModel(nn.Module):
 
             if epoch % 100 == 0:
                 print(f"Epoch {epoch}, Loss: {loss.item()}")
-                predictions.append(y_pred.detach().numpy())
-                true_functions.append(y_train.numpy())
+                predictions.append(y_pred.cpu().detach().numpy())
+                true_functions.append(y_train.cpu().numpy())
                 epoch_values.append(epoch)
 
             end_loss = loss.item()
-            if end_loss > 10:
+            if end_loss > upper_bound:
                 break
+
+        self.store_coefficients()
 
         ani = animation.FuncAnimation(
             fig, update_plot, frames=len(epoch_values), interval=1
         )
         if render:
             ani.save(
-                f"rational_trained_models/{name}_function.gif",
-                writer="imagemagick",
+                f"rational_trained_models/rational_trained_models/{name}_function.gif",
+                writer="ffmpeg",
                 fps=30,
             )
             plt.close()
@@ -165,7 +162,7 @@ class RationalsModel(nn.Module):
             true_func = torch.nn.functional.relu(space)
         return true_func
 
-    def _show(self, x_true, y_true, func=None):
+    def _show(self, x, y, func=None):
         """
         The _show function is a helper function that plots the true and
         predicted functions. It takes in three arguments: x_true, y_true,
@@ -174,16 +171,16 @@ class RationalsModel(nn.Module):
         a string that will be used as a label for the legend of our graph.
 
         :param self: Access the attributes and methods of the class
-        :param x_true: Plot the true function
-        :param y_true: Plot the true function
+        :param x: Space of function
+        :param y: the function
         :param func: Label the plot
         :return: A plot of the true function and the predicted function
         """
         x_pred = torch.linspace(-2, 2, 1000)
         y_pred = self.forward(x_pred)
 
-        plt.plot(x_true, y_true, label=f"True {func}")
-        plt.plot(x_pred, y_pred.detach().numpy(), label=f"Predicted {func}")
+        plt.plot(x, y, label=f"True {func}")
+        plt.plot(x_pred, y_pred.cpu().detach().numpy(), label=f"Predicted {func}")
         plt.legend()
         plt.show()
 
@@ -197,13 +194,13 @@ class RationalsModel(nn.Module):
         :param self: Access the attributes of the class
         :return: A plot of the functions and their approximations
         """
-        x_true = torch.linspace(-2, 2, 100)
+        space = torch.linspace(-2, 2, 100)
 
         for func in self.function_list:
-            name = f"rational_trained_models/{func}_model.pt"
+            name = f"rational_trained_models/rational_trained_models/{func}_model.pt"
             model = torch.load(name)
-            y_true = model.load_func(func)
-            model._show(x_true, y_true, func)
+            y = model.load_func(func)
+            model._show(space, y, func)
 
     def show(self):
         """
@@ -214,12 +211,12 @@ class RationalsModel(nn.Module):
         :param self: Access the attributes and methods of the class
         :return: A plot of the function, and the predicted values
         """
-        x_true = torch.linspace(-2, 2, 100)
+        space = torch.linspace(-2, 2, 100)
         func = self.func_name
-        name = f"rational_trained_models/{func}_model.pt"
+        name = f"rational_trained_models/rational_trained_models/{func}_model.pt"
         model = torch.load(name)
-        y_true = model.load_func(func)
-        model._show(x_true, y_true, func)
+        y = model.load_func(func)
+        model._show(space, y, func)
 
     def store_coefficients(self):
         """
@@ -229,14 +226,17 @@ class RationalsModel(nn.Module):
         trained models for different functions, and then load them later.
 
         :param self: Refer to the object itself
-        :return: A dictionary with the function name and coefficients
+        :return: A dictionary with the function name and coefficients of numerator and
+        denominator
         """
         coefficients_dict = {
             "function": self.func_name,
-            "coefficients": self.coefficients.tolist(),
+            "coeff_numerator": self.coeff_numerator.tolist(),
+            "coeff_denominator": self.coeff_denominator.tolist(),
         }
-        with open(f"rational_trained_models/coeff_{self.func_name}.json", "w") as file:
-            json.dump(coefficients_dict, file)
+        with open(f"rational_trained_models/rational_trained_models/coeff_{self.func_name}.json", "w") as file:
+            json.dump(coefficients_dict, file, indent=1, separators=(", ", " : "))
+
 
     def load_coefficients(self):
         """
@@ -246,16 +246,20 @@ class RationalsModel(nn.Module):
         it contains data for another function.
 
         :param self: Refer to the object itself
-        :return: The coefficients for the function name given
+        :return: The coefficients of numerator and denominator for the function
+        name given
         """
         try:
             with open(
-                f"rational_trained_models/coeff_{self.func_name}.json", "r"
+                f"rational_trained_models/rational_trained_models/coeff_{self.func_name}.json", "r"  
             ) as file:
                 data = json.load(file)
                 if data["function"] == self.func_name:
-                    self.coefficients = torch.tensor(
-                        data["coefficients"], requires_grad=True
+                    self.coeff_numerator = torch.tensor(
+                        data["coeff_numerator"], requires_grad=True
+                    )
+                    self.coeff_denominator = torch.tensor(
+                        data["coeff_denominator"], requires_grad=True
                     )
                 else:
                     raise ValueError("No function found!")
@@ -263,16 +267,15 @@ class RationalsModel(nn.Module):
             print("No file found!")
 
 
-def train_all(render=True, epsilon=0.001, use_coefficients=False):
+def train_all(render=False, epsilon=0.0001, use_coefficients=False, space=None):
     """
     The train_all function trains a rational function for each of the activation
     functions in the function_list. The model is trained until it reaches an end
     loss of epsilon, which defaults to 0.001.
 
     :param render: Determine whether or not to show the plot of the model's progress
-    :param epsilon: Determine when to stop training the model
+    :param epsilon: Determine the bound when to stop training the model
     :param use_coefficients: Determine whether the coefficients of the rational function are
-    :return: Nothing
     """
     function_list = ["relu", "sigmoid", "tanh", "leaky_relu", "swish", "gelu"]
 
@@ -280,7 +283,11 @@ def train_all(render=True, epsilon=0.001, use_coefficients=False):
         model = RationalsModel(
             n=5, m=5, function=func, use_coefficients=use_coefficients
         )
-        x_train = torch.linspace(-2, 2, 100)
+        if space is None:
+            x_train = torch.linspace(-2, 2, 100).to(device)
+        else:
+            x_train = space
+
         if func == "relu":
             true_func = torch.nn.functional.relu(x_train)
         elif func == "sigmoid":
@@ -296,25 +303,27 @@ def train_all(render=True, epsilon=0.001, use_coefficients=False):
         else:
             print("Invalid function name: %s" % func)
 
-        y_train = true_func
+        y_train = true_func.to(device)
 
-        end_loss = model.train(func, x_train, y_train, render=render)
+        end_loss = model.train_rational(func, x_train, y_train, render=render)
 
         while end_loss > epsilon:
             model = RationalsModel(
                 n=5, m=5, function=func, use_coefficients=use_coefficients
             )
             y_train = true_func
-            end_loss = model.train(func, x_train, y_train, render=render)
+            end_loss = model.train_rational(func, x_train, y_train, render=render)
 
-        torch.save(model, f"rational_trained_models/{func}_model.pt")
+        torch.save(model, f"rational_trained_models/rational_trained_models/{func}_model.pt")
 
 
 if __name__ == "__main__":
-    # train_all(render=True, use_coefficients=True)
-
+    #train_all(render=True, use_coefficients=False)
     # plot results
     # mod = RationalsModel(function="leaky_relu")
     mod = RationalsModel()
     # mod.show()
     mod.show_all()
+
+
+# rational_trained_models/ add if no work no forget
