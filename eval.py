@@ -2,7 +2,12 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from dataset2 import valid_loader
+from dataset2 import valid_loader, seed, seed_everything
+
+seed_everything(seed)
+
+# In evaluation normalization of valid_loader OFF
+
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -46,32 +51,3 @@ with torch.no_grad():
         plt.title(f'Predicted class: {pred[i].item()}, Target class: {target[i].item()}')
         plt.savefig(f'evaluation_img/image_{i}.png')
         plt.close()
-
-
-"""
-# Get one batch of test data
-data, target = next(iter(test_loader))
-
-# Only take the first image from the batch
-data_single = data[0].unsqueeze(0)  # Add an extra dimension because the model expects batches
-target_single = target[0].unsqueeze(0)
-
-# If you're using a GPU
-data_single, target_single = data_single.to(device), target_single.to(device)  # Assuming device is your device, either "cpu" or "cuda"
-
-# Disable gradient computation
-with torch.no_grad():
-    # Forward pass
-    output = model(data_single)
-
-    # Get the predicted class if the output is not already in that form
-    pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability
-
-    # Convert the data to a format suitable for display
-    img = data_single.cpu().numpy()[0][0]  # Adjust this if your images are not single-channel
-
-    # Display the image and prediction
-    plt.imshow(img, cmap='gray')
-    plt.title(f'Predicted: {pred.item()}, Actual: {target_single.item()}')
-    plt.savefig('output.png')
-"""
