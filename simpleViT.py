@@ -8,13 +8,68 @@ import rationals
 
 import lightning as pl
 
-from torchmetrics import Accuracy  
+from torchmetrics import Accuracy
 
 from warmupScheduler import LinearWarmupCosineAnnealingLR
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, LambdaLR, _LRScheduler
 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from mpl_toolkits.mplot3d import Axes3D
+
+from dataset2 import seed, seed_everything
+
+seed_everything(seed)
+
+#Parameter
+
+scheduler_string = 'StepLR' #'WarmupStepLR' 'Cosine'
+
+#StepLR               #gamma=0.6, 0.7 rationals: StepLR(optimizer, step_size=1, gamma=0.7), WarmupStepLR(optimizer, warmup_epochs=1, start_lr_warmup=4e-5, step_size=1, gamma=0.7) -> v_num242 lr simple: 5e-5, rationals, "gelu", coefficients=True
+step_size_steplr=1 
+gamma_steplr=0.5
+
+#WarmupStepLR
+warmup_epochs=1
+start_lr_warmup=4e-5 
+step_size_warmup=1 
+gamma_warmup=0.7
+
+#LinearCosineAnnealing
+warmup_epochs_cosine=3
+warmup_start_lr_cosine=5e-5
+eta_min_cosine=1e-6
+max_epochs_cosine=35
+
+#Accuracy Attributes train/ val
+num_classes_train=10
+top_k_train=1
+
+num_classes_val=10
+top_k_val=1
 
 # helpers
+class WarmupStepLR(_LRScheduler):
+    def __init__(self, optimizer, warmup_epochs, step_size, start_lr_warmup, gamma, last_epoch=-1):
+        self.warmup_epochs = warmup_epochs
+        self.step_size = step_size
+        self.start_lr_warmup = start_lr_warmup
+        self.gamma = gamma
+        self.lr_decay = StepLR(optimizer, step_size=self.step_size, gamma=self.gamma, last_epoch=last_epoch)
+        super().__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        if self.last_epoch < self.warmup_epochs:
+            return [self.start_lr_warmup + ((base_lr - self.start_lr_warmup) / self.warmup_epochs) * self.last_epoch for base_lr in self.base_lrs]
+        else:
+            return self.lr_decay.get_last_lr()
+    
+    def step(self, epoch=None):
+        if self.last_epoch < self.warmup_epochs:
+            super().step(epoch)
+        else:
+            self.lr_decay.step(epoch)
 
 def pair(t):
     return t if isinstance(t, tuple) else (t, t)
@@ -40,7 +95,7 @@ class FeedForward(nn.Module):
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
-            rationals.RationalsModel(), #nn.PReLU(), nn.ReLU(), rationals.RationalsModel(), nn.GELU(), 
+            nn.GELU(), #nn.PReLU(), nn.ReLU(), rationals.RationalsModel(), nn.GELU(), 
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
@@ -103,8 +158,8 @@ class simple_ViT(pl.LightningModule):
         self.lr=lr
 
         # new PL attributes: 
-        self.train_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) #top_k=1 means only if the correct output is given the answer is right, top_k=3 would mean the answer has to be in top 3 output of model for correct response
-        self.val_acc = Accuracy(task="multiclass", num_classes=10, top_k=1) 
+        self.train_acc = Accuracy(task="multiclass", num_classes=num_classes_train, top_k=top_k_train) #top_k=1 means only if the correct output is given the answer is right, top_k=3 would mean the answer has to be in top 3 output of model for correct response
+        self.val_acc = Accuracy(task="multiclass", num_classes=num_classes_val, top_k=top_k_val) 
         #self.test_acc = Accuracy()  
 
         assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
@@ -142,28 +197,23 @@ class simple_ViT(pl.LightningModule):
     
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=0.0) #weight_decay=0.003, weight_decay=0.0 fused=True !!lr: 3e-4!!
-        scheduler = StepLR(optimizer, step_size=1, gamma=0.5) #gamma=0.6, 0.7
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr) # nn.Activations: lr: 3e-4
+        if scheduler_string == 'StepLR':
+            scheduler = StepLR(optimizer, step_size=step_size_steplr, gamma=gamma_steplr) 
+        elif scheduler_string == 'WarmupStepLR':
+            scheduler = WarmupStepLR(optimizer, warmup_epochs=warmup_epochs, start_lr_warmup=start_lr_warmup, step_size=step_size_warmup, gamma=gamma_warmup)
+        else: 
+            scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=warmup_epochs_cosine, warmup_start_lr=warmup_start_lr_cosine, eta_min=eta_min_cosine, max_epochs=max_epochs_cosine)
 
         return [optimizer],[scheduler]
-    """
-    
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=0.0) # fused=True 3e-5, 3e-4, 3e-3, 4e-5, 4e-4, 4e-3, 5e-5, ...
-        scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=3, warmup_start_lr=5e-5, eta_min=1e-6, max_epochs=35) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
-        
-        return {
-        'optimizer': optimizer,
-        'lr_scheduler': scheduler
-        }
-    """
+ 
     def training_step(self, batch, batch_idx):
 
         # Loop through data loader data batches
-        x,y = batch #X
+        x,y = batch 
 
         # 1. Forward pass
-        y_pred = self(x) #X
+        y_pred = self(x) 
 
         # define loss
         loss_fn = nn.CrossEntropyLoss()
@@ -177,15 +227,24 @@ class simple_ViT(pl.LightningModule):
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.log("train_acc", self.train_acc.compute(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
+        # logg gradients
+        if self.global_step % 2000 == 0:
+            for name, module in self.named_modules():
+                if isinstance(module, nn.Linear):
+                    # Log the gradients of linear layers
+                    for param_name, param in module.named_parameters():
+                        if param.grad is not None:
+                            self.logger.experiment.add_histogram(f'gradients/{name}/{param_name}', param.grad, self.global_step)
+
         return loss
 
     def validation_step(self, batch, batch_idx):
 
         # Loop through DataLoader batches
-        x,y = batch #X
+        x,y = batch 
 
         # 1. Forward pass
-        val_pred_logits = self(x) #X
+        val_pred_logits = self(x) 
 
         # define loss
         loss_fn = nn.CrossEntropyLoss()
@@ -195,11 +254,12 @@ class simple_ViT(pl.LightningModule):
         # Compute accuracy
         preds = torch.argmax(val_pred_logits, dim=1)
         self.val_acc.update(preds, y) 
-        #acc = torch.mean((preds == y).float())
 
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
-        #self.log('val_acc', acc, on_epoch=True, prog_bar=True, logger=True)
         self.log("val_acc", self.val_acc.compute(), prog_bar=True, logger=True) 
 
         return loss
+    
+        
+        
 

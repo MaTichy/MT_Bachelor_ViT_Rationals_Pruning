@@ -1,4 +1,5 @@
 import copy
+import pytz
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
@@ -20,7 +21,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 """
 l1_unstructured, the L1-norm (which is simply the sum of the absolute values of the elements) is used as 
 a measure of magnitude. The method prunes a specified fraction of the parameters with the smallest L1-norm.
+
+the gradients of the pruned weights (which are set to zero) will automatically be zero during the backward pass of the training process. This is because the backward pass computes the gradients as the derivative of the loss with respect to the weights. Since the pruned weights are zero, their gradients will also be zero.
 """
+
 
 """
 1. Random Initialization: They started with a randomly initialized neural network.
@@ -29,6 +33,12 @@ a measure of magnitude. The method prunes a specified fraction of the parameters
 4. Resetting: After pruning, they reset the weights of the remaining (unpruned) part of the network to their values from the initial (random) initialization. This was done by element-wise multiplying the weights with the mask.
 5. Iteration: They repeated the above steps (training, pruning, resetting) for a certain number of iterations, each time pruning more weights.
 """
+
+#Parameter
+train_model_path_input = '/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_228/checkpoints/epoch=6-step=16023.ckpt' #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_193/checkpoints/epoch=4-step=11445.ckpt" # "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_192/checkpoints/epoch=48-step=112161.ckpt"
+
+total_prune_percentage_input = 0.8002
+pruning_iterations_input = 3
 
 # choose model
 #1. random Initialisation
@@ -45,12 +55,12 @@ def calculate_pruning_percentage(total_prune_percentage, iterations):
     prune_percentage_per_iteration = 1 - remaining_percentage ** (1 / iterations) #remaining_percentage*iterations
     return prune_percentage_per_iteration
 
-total_prune_percentage = 0.82
-pruning_iterations = 3
+total_prune_percentage = total_prune_percentage_input
+pruning_iterations = pruning_iterations_input
 prune_ratio = calculate_pruning_percentage(total_prune_percentage, pruning_iterations)
 
 #2. Trained model that stopped training when val_loss doesnt improve anymore 
-trained_model_path = '/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_231/checkpoints/epoch=5-step=13734.ckpt' #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_193/checkpoints/epoch=4-step=11445.ckpt" # "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_192/checkpoints/epoch=48-step=112161.ckpt"
+trained_model_path = train_model_path_input 
 trained_model = model.load_from_checkpoint(checkpoint_path=trained_model_path)
 
 # 3. Iterative pruning and reinitialization
@@ -58,8 +68,8 @@ for iteration in range(pruning_iterations):
     trainer_prune=pl.Trainer(max_epochs=1, fast_dev_run=False, limit_train_batches=0.2, limit_val_batches=0.2) # limit_train_batches=0.2, limit_val_batches=0.2, enable_checkpointing=True
     # Prune the model weights
     for name, module in trained_model.named_modules():
-        #if "transformer.layers" in name and (".net.1" in name or ".net.3" in name) and isinstance(module, nn.Linear):
-        if isinstance(module, nn.Linear):
+        if "transformer.layers" in name and (".net.1" in name or ".net.3" in name) and isinstance(module, nn.Linear):
+        #if isinstance(module, nn.Linear):
             prune.l1_unstructured(module, name='weight', amount=prune_ratio)
 
             # Get the original module (before training) from the copied model
@@ -81,11 +91,9 @@ for iteration in range(pruning_iterations):
 if not os.path.exists('pruned_models'):
     os.makedirs('pruned_models')
 
-# Get the current date and time
-now = datetime.now()
-
-# Format the date and time as a string
-timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+my_timezone = pytz.timezone('Europe/Berlin')  
+now = datetime.now(my_timezone)  
+timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  
 
 # Save your model in the 'pruned_models' directory with a unique name
 torch.save(trained_model, f'pruned_models/model_{timestamp}.pth')

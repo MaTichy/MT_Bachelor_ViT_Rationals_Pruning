@@ -35,12 +35,12 @@ def compute_stats(model):
     return print(stats)
 
 #initialize with pruned model from lth.py
-model_pruned_final = torch.load("/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-27_10-57-58.pth") #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-26_20-12-58.pth" #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-15_11-26-16.pth"  #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-13_10-07-01.pth")
+model_pruned_final = torch.load("/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-04_20-13-41.pth") # "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-27_10-57-58.pth" "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-26_20-12-58.pth" #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-15_11-26-16.pth"  #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-13_10-07-01.pth")
 
 # learning rate reinit
-model_pruned_final.hparams.lr = 4e-6 
+#model_pruned_final.hparams.lr = 4e-6 
 
-compute_stats(model_pruned_final)
+#compute_stats(model_pruned_final)
 
 # 4. final train pruned model with unpruned weights initialized from model_copy at start when initializing the model
 trainer_final = pl.Trainer(max_epochs=epochs, fast_dev_run=False,  callbacks=[EarlyStopping(monitor="val_loss", mode="min", patience=2)]) # , limit_train_batches=0.5, limit_val_batches=0.5

@@ -10,7 +10,7 @@ import random
 import numpy as np
 
 # Set the batch size
-BATCH_SIZE = 32 #128, 64 
+BATCH_SIZE = 32 #128, 64, 32
 seed = 42   #42
 
 # svhn 32x32
@@ -28,35 +28,37 @@ def seed_everything(seed):
 seed_everything(seed)
 
 """
-   transforms.RandomApply(
+Augmentation Strategies:
+
+    transforms.RandomApply(
         [transforms.RandomResizedCrop(IMG_SIZE)], 
         p=0.2),
     transforms.RandomApply(
         [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2)],
         p=0.6),
-    transforms.RandomGrayscale(p=0.3),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
+    transforms.RandomGrayscale(p=0.2),
 
-    #transforms.Resize((IMG_SIZE,IMG_SIZE)), 
-    #transforms.CenterCrop(IMG_SIZE),
+    #transforms.AutoAugment(policy),
+    #transforms.RandomApply(
+    #    [transforms.ColorJitter(brightness=0.1, contrast=0.2, saturation=0.2)],
+    #    p=0.4), #p=0.3
+    #transforms.RandomGrayscale(p=0.1), #p=0.9
 """
 
+policy = transforms.AutoAugmentPolicy.SVHN #[transforms.AutoAugmentPolicy.CIFAR10, transforms.AutoAugmentPolicy.IMAGENET, transforms.AutoAugmentPolicy.SVHN]
+              
 train_transform = transforms.Compose([
     transforms.RandomApply(
-        [transforms.RandomResizedCrop(IMG_SIZE)], 
-        p=0.2),
-    transforms.RandomApply(
-        [transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2)],
-        p=0.6),
-    transforms.RandomGrayscale(p=0.3),
+        [transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1)],
+        p=0.4),
+    transforms.RandomGrayscale(p=0.2),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
 ])
     
 test_transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
+    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970]),
 ])
 
 train_set = datasets.SVHN(root='../data/SVHN', split='train', download=True)

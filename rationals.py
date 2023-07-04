@@ -8,7 +8,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class RationalsModel(torch.nn.Module):
-    def __init__(self, n=5, m=5, function="gelu", use_coefficients=True):
+    def __init__(self, n=5, m=4, function="relu", use_coefficients=True):
         """
         The __init__ function is called when the class is instantiated.
         It sets up the attributes of an instance of a class.
@@ -281,7 +281,7 @@ def train_all(render=False, epsilon=0.0001, use_coefficients=False, space=None):
 
     for func in function_list:
         model = RationalsModel(
-            n=5, m=5, function=func, use_coefficients=use_coefficients
+            n=5, m=4, function=func, use_coefficients=use_coefficients
         )
         if space is None:
             x_train = torch.linspace(-2, 2, 100).to(device)
@@ -309,7 +309,7 @@ def train_all(render=False, epsilon=0.0001, use_coefficients=False, space=None):
 
         while end_loss > epsilon:
             model = RationalsModel(
-                n=5, m=5, function=func, use_coefficients=use_coefficients
+                n=5, m=4, function=func, use_coefficients=use_coefficients
             )
             y_train = true_func
             end_loss = model.train_rational(func, x_train, y_train, render=render)

@@ -3,25 +3,78 @@ import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
 import lightning as pl
+import math
 
+from simpleViT_structural_pruning import SimpleViT
 from vit_loader import vit_loader
 #from dataset2 import seed, seed_everything, train_loader, valid_loader
 
-import math
+original_model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-07-04_17-18-01.pth')
+model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-04_20-13-41.pth')
 
-def calculate_pruning_percentage(total_prune_percentage, iterations):
-    remaining_percentage = 1 - total_prune_percentage
-    prune_percentage_per_iteration = 1 - math.pow(remaining_percentage, 1/iterations)
-    return prune_percentage_per_iteration
 
-# Example usage:
-total_prune_percentage = 0.86  # 86% total pruning
-iterations = 3
-prune_percentage_per_iteration = calculate_pruning_percentage(total_prune_percentage, iterations)
+def compute_stats(model):
+    total_params = 0
+    total_pruned_params = 0
 
-print(prune_percentage_per_iteration)
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            total_params += torch.numel(module.weight.data)
+            total_pruned_params += torch.sum(module.weight.data == 0).item() #weight_mask
 
+    stats = {
+        "total_params": total_params,
+        "total_pruned_params": total_pruned_params,
+        "total_pruned_ratio": total_pruned_params / total_params,
+    }
+
+    return print(stats)
+
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+print(f'Parameter Original Model: {count_parameters(original_model)}')
+print(f'Parameter Pruned Model: {count_parameters(model)}')
+ #/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-27_10-57-58.pth  ,  /home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-03_22-12-20.pth
+
+#print(compute_stats(model))
+
+#for name, module in model.named_modules():
+#    if "transformer.layers" in name and isinstance(module, nn.Linear):
+#        print(count_nonzero_weights(module))
+
+#for name, module in model.named_modules():
+#    print(module)
+ 
+
+# /home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-27_10-57-58.pth
 """
+
+
+def count_nonzero_weights(layer):
+    return (layer.weight.data != 0).sum().item()
+
+def count_nonzero_weights(layer):
+    return (layer.weight.data != 0).sum().item()
+
+def get_layer_dims(old_model):
+    layer_dims = []
+    for name, module in old_model.named_modules():  # Iterating over the modules in the old model
+        # Checking if the module is a linear layer within the "transformer.layers" namespace
+        if "transformer.layers" in name and (".net.1" in name or ".net.3" in name) and isinstance(module, nn.Linear):
+        #if "transformer.layers" in name and isinstance(module, nn.Linear):
+            num_nonzero_weights = count_nonzero_weights(module)
+            layer_dims.append(num_nonzero_weights)
+    return layer_dims
+
+# Get the layer dimensions from the pruned model
+layer_dims = get_layer_dims(model_pruned)
+
+print(layer_dims)
+
+
 model = vit_loader("simple") # "simple" or "efficient"
 
 #2. Trained model that converges - val_acc = 90%

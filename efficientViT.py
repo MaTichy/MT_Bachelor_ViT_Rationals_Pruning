@@ -67,13 +67,13 @@ class ViT(pl.LightningModule):
     """
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=0.0) #weight_decay=0.003, fused=True !!lr: 3e-4!!
-        scheduler = StepLR(optimizer, step_size=3, gamma=0.7)
+        scheduler = StepLR(optimizer, step_size=2, gamma=0.5)
 
         return [optimizer],[scheduler]
     """
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, fused=True) # optimal lr: 0.0001445439770745928 (lr_find) eta_min= 1e-4, 4e-5, 2.7542287033381663e-04, warmup_start_lr=1e-4
-        scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=3, warmup_start_lr=2e-4, eta_min=1e-4, max_epochs=30) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
+        scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=5, warmup_start_lr=1e-5, eta_min=5e-4, max_epochs=30) #Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and base_lr followed by a cosine annealing schedule between base_lr and eta_min.
         
         return [optimizer],[scheduler]
     """

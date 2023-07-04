@@ -7,6 +7,8 @@ from reversible import ReversibleSequence, SequentialSequence
 
 import lightning as pl
 
+import rationals 
+
 # helper functions
 
 def default(val, default_val):
@@ -51,7 +53,7 @@ class FeedForward(pl.LightningModule):
 
         self.glu = glu
         self.w1 = nn.Linear(dim, dim * mult * (2 if glu else 1))
-        self.act = activation()
+        self.act = rationals.RationalsModel() #Rational Activations, default: activation() (nn.GELU)
         self.dropout = nn.Dropout(dropout)
         self.w2 = nn.Linear(dim * mult, dim)
 
