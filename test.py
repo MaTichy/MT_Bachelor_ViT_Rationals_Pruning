@@ -10,6 +10,9 @@ from vit_loader import vit_loader
 
 
 
+
+# Compare Parameter Count Original unstructured pruned model with structured pruned model
+
 original_model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-07-04_17-18-01.pth')
 model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-04_20-13-41.pth')
 

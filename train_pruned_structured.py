@@ -1,6 +1,5 @@
 from __future__ import print_function
 from itertools import chain
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -14,6 +13,9 @@ from tqdm import tqdm
 
 from vit_loader import vit_loader
 from dataset2 import train_loader, valid_loader, seed, seed_everything
+
+
+
 
 seed_everything(seed)
 

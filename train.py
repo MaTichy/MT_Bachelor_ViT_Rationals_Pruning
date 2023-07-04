@@ -11,9 +11,6 @@ from dataset2 import train_loader, valid_loader #test_loader,
 from dataset2 import seed_everything, seed
 #from dataset3 import SVHNDataModule
 
-# set Tensorboard debugger
-# tf.debugging.experimental.enable_dump_debug_info("../lightning_logs/", tensor_debug_mode="FULL_HEALTH", circular_buffer_size=-1)
-
 #svhn_datamodule = SVHNDataModule()
 
 #seed

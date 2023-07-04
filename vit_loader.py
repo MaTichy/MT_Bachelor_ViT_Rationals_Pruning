@@ -3,7 +3,9 @@ from simpleViT import simple_ViT
 from linformer import Linformer
 import torch
 from xtransformer import ViTransformerWrapper, Encoder
+from dataset2 import seed_everything, seed
 
+seed_everything(seed)
 
 def vit_loader(args):
     if(args == "simple"):

@@ -2,12 +2,18 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
-from helpers import NUM_WORKERS
-
 import os
-
 import random
 import numpy as np
+
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    NUM_WORKERS = os.cpu_count()
+else:
+    device = torch.device("cpu")
+    NUM_WORKERS = os.cpu_count()
+
+
 
 # Set the batch size
 BATCH_SIZE = 32 #128, 64, 32
@@ -26,6 +32,7 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 seed_everything(seed)
+
 
 """
 Augmentation Strategies:
@@ -58,7 +65,7 @@ train_transform = transforms.Compose([
     
 test_transform = transforms.Compose([
     transforms.ToTensor(),
-    #transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970]),
+    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970]),
 ])
 
 train_set = datasets.SVHN(root='../data/SVHN', split='train', download=True)

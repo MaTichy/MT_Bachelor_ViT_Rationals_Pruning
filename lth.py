@@ -22,11 +22,12 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 l1_unstructured, the L1-norm (which is simply the sum of the absolute values of the elements) is used as 
 a measure of magnitude. The method prunes a specified fraction of the parameters with the smallest L1-norm.
 
-the gradients of the pruned weights (which are set to zero) will automatically be zero during the backward pass of the training process. This is because the backward pass computes the gradients as the derivative of the loss with respect to the weights. Since the pruned weights are zero, their gradients will also be zero.
+The gradients of the pruned weights (which are set to zero) will automatically be zero during the backward pass of the training process. This is because the backward pass computes the gradients as the derivative of the loss with respect to the weights. Since the pruned weights are zero, their gradients will also be zero.
 """
 
 
 """
+Lottery Ticket Hypothesis - Iterative Pruning:
 1. Random Initialization: They started with a randomly initialized neural network.
 2. Training: They trained this network for a certain number of iterations.
 3. Pruning: After training, they pruned a certain percentage of the smallest weights in the network. This was done by setting the corresponding elements in the mask to zero.
@@ -34,13 +35,15 @@ the gradients of the pruned weights (which are set to zero) will automatically b
 5. Iteration: They repeated the above steps (training, pruning, resetting) for a certain number of iterations, each time pruning more weights.
 """
 
-#Parameter
+#Model path
 train_model_path_input = '/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_228/checkpoints/epoch=6-step=16023.ckpt' #"/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_193/checkpoints/epoch=4-step=11445.ckpt" # "/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_192/checkpoints/epoch=48-step=112161.ckpt"
 
+#Total prune percentage
 total_prune_percentage_input = 0.8002
+#Number of pruning iterations
 pruning_iterations_input = 3
 
-# choose model
+#Choose model
 #1. random Initialisation
 model = vit_loader("simple") # "simple" or "efficient"
 
@@ -65,7 +68,7 @@ trained_model = model.load_from_checkpoint(checkpoint_path=trained_model_path)
 
 # 3. Iterative pruning and reinitialization
 for iteration in range(pruning_iterations):
-    trainer_prune=pl.Trainer(max_epochs=1, fast_dev_run=False, limit_train_batches=0.2, limit_val_batches=0.2) # limit_train_batches=0.2, limit_val_batches=0.2, enable_checkpointing=True
+    trainer_prune=pl.Trainer(max_epochs=1, fast_dev_run=False) # limit_train_batches=0.2, limit_val_batches=0.2, enable_checkpointing=True
     # Prune the model weights
     for name, module in trained_model.named_modules():
         if "transformer.layers" in name and (".net.1" in name or ".net.3" in name) and isinstance(module, nn.Linear):
