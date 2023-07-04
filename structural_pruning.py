@@ -15,16 +15,15 @@ seed_everything(seed)
 
 model_pruned = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-07-04_17-18-01.pth')
 
-# Create new model
-#new_model = SimpleViT(new_architecture)
+#Create new model
 new_model = SimpleViT(
-        image_size = 32, # 32, 64 svhn / 64 tiny ;Image size. If you have rectangular images, make sure your image size is the maximum of the width and height
-        patch_size = 4, # 4 for 32, 16 for 224 svhn / 8 tiny, ;Number of patches. image_size must be divisible by patch_size. The number of patches is:  n = (image_size // patch_size) ** 2 and n must be greater than 16.
-        num_classes = 10, #10, 200 Number of classes to classify.
-        dim = 1024, #1024, Last dimension of output tensor after linear transformation nn.Linear(..., dim).
-        depth = 6, # 6 Number of Transformer blocks. 9
-        heads = 12, # 16 Number of heads in Multi-head Attention layer. 12
-        mlp_dim = 2048 # 2048 Dimension of the MLP (FeedForward) layer.
+        image_size = 32,
+        patch_size = 4, 
+        num_classes = 10,
+        dim = 1024, 
+        depth = 6, 
+        heads = 12, 
+        mlp_dim = 2048
 )
 # Get state dict from pruned model
 pruned_state_dict = model_pruned.state_dict()

@@ -17,10 +17,10 @@ from dataset2 import seed_everything, seed
 seed_everything(seed)
 
 # set epochs
-epochs = 40 #20
+epochs = 40 
 
 # choose model
-model = vit_loader("simple") # "simple" or "efficient"
+model = vit_loader("simple") # "simple", "efficient" or 'xtransformer'
 
 # lightning Trainer 
 trainer = pl.Trainer(max_epochs=epochs, fast_dev_run=True, callbacks=[EarlyStopping(monitor="val_loss", mode="min", patience=2)]) # precision="16-mixed", callbacks=[EarlyStopping(monitor="val_loss", mode="min", patience=2)], callbacks=[StochasticWeightAveraging(swa_lrs=2e-5)], accelerator='auto' imit_train_batches=0.7, limit_val_batches=0.7,

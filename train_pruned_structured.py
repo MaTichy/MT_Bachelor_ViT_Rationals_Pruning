@@ -1,8 +1,11 @@
 from __future__ import print_function
+import datetime
 from itertools import chain
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytz
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,7 +19,7 @@ from dataset2 import train_loader, valid_loader, seed, seed_everything
 
 
 
-
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 seed_everything(seed)
 
 # Hyperparameters
@@ -24,8 +27,6 @@ seed_everything(seed)
 epochs = 20 #20
 lr = 3e-6 #3e-5
 gamma = 0.7 #0.7
-
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-04_20-13-41.pth')
 
@@ -91,3 +92,14 @@ for epoch in range(epochs):
     )
 
 writer.close()
+
+# torch.save(model)
+if not os.path.exists('pruned_models'):
+    os.makedirs('pruned_models')
+
+my_timezone = pytz.timezone('Europe/Berlin')  
+now = datetime.now(my_timezone)  
+timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  
+
+# Save model in the 'pruned_models' directory with a unique name
+torch.save(model, f'pruned_models/structured_retrain_{timestamp}.pth')

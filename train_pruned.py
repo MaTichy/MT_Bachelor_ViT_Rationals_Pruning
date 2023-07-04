@@ -54,5 +54,5 @@ now = datetime.now()
 # Format the date and time as a string
 timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
 
-# Save your model in the 'pruned_models' directory with a unique name
+# Save model in the 'pruned_models' directory with a unique name
 torch.save(model_pruned_final, f'pruned_models/retrained_{timestamp}.pth')

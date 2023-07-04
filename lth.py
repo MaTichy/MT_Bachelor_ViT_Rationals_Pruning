@@ -98,5 +98,5 @@ my_timezone = pytz.timezone('Europe/Berlin')
 now = datetime.now(my_timezone)  
 timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  
 
-# Save your model in the 'pruned_models' directory with a unique name
+# Save model in the 'pruned_models' directory with a unique name
 torch.save(trained_model, f'pruned_models/model_{timestamp}.pth')
