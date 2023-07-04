@@ -58,7 +58,7 @@ train_transform = transforms.Compose([
     
 test_transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970]),
+    #transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970]),
 ])
 
 train_set = datasets.SVHN(root='../data/SVHN', split='train', download=True)

@@ -7,28 +7,11 @@ import math
 
 from simpleViT_structural_pruning import SimpleViT
 from vit_loader import vit_loader
-#from dataset2 import seed, seed_everything, train_loader, valid_loader
+
+
 
 original_model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-07-04_17-18-01.pth')
 model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-04_20-13-41.pth')
-
-
-def compute_stats(model):
-    total_params = 0
-    total_pruned_params = 0
-
-    for name, module in model.named_modules():
-        if isinstance(module, nn.Linear):
-            total_params += torch.numel(module.weight.data)
-            total_pruned_params += torch.sum(module.weight.data == 0).item() #weight_mask
-
-    stats = {
-        "total_params": total_params,
-        "total_pruned_params": total_pruned_params,
-        "total_pruned_ratio": total_pruned_params / total_params,
-    }
-
-    return print(stats)
 
 
 def count_parameters(model):
@@ -37,7 +20,22 @@ def count_parameters(model):
 
 print(f'Parameter Original Model: {count_parameters(original_model)}')
 print(f'Parameter Pruned Model: {count_parameters(model)}')
- #/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-27_10-57-58.pth  ,  /home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-03_22-12-20.pth
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-06-27_10-57-58.pth  ,  /home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-03_22-12-20.pth
 
 #print(compute_stats(model))
 
