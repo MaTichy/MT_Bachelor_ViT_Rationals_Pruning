@@ -30,9 +30,9 @@ class FeedForward(nn.Module):
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
-            nn.Linear(dim, 410),
+            nn.Linear(dim, 512),
             nn.GELU(),
-            nn.Linear(410, dim),
+            nn.Linear(512, dim),
         )
     def forward(self, x):
         return self.net(x)

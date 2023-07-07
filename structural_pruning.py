@@ -73,9 +73,6 @@ for key, value in pruned_state_dict.items():
 # Load the new state dict into the new model
 new_model.load_state_dict(new_state_dict)
 
-# Load the new state dict into the new model
-new_model.load_state_dict(new_state_dict)
-
 my_timezone = pytz.timezone('Europe/Berlin')  
 now = datetime.now(my_timezone)  
 timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  

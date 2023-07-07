@@ -1,4 +1,5 @@
 import copy
+import time
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
@@ -7,9 +8,71 @@ import math
 
 from simpleViT_structural_pruning import SimpleViT
 from vit_loader import vit_loader
+from pytorch_lightning import Trainer
 
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+model_pruned = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-07-04_17-18-01.pth')
+
+
+# Get state dict from pruned model
+pruned_state_dict = model_pruned.state_dict()
+# Clean up pruned model's state_dict
+cleaned_state_dict = {k: v for k, v in pruned_state_dict.items() if not (k.endswith('_orig') or k.endswith('_mask'))}
+
+# Replace pruned_state_dict with the cleaned version
+pruned_state_dict = cleaned_state_dict
+
+for key, value in pruned_state_dict.items():
+    print(key)
+
+"""
+
+#Load Original Model unpruned
+model_shell = vit_loader('simple')
+model = model_shell.load_from_checkpoint('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/lightning_logs/version_228/checkpoints/epoch=6-step=16023.ckpt')
+
+# Create a random input tensor
+data = torch.randn(32, 3, 32, 32)
+# Create a random target tensor
+target = torch.randint(0, 10, (32,))
+
+data = data.to(device)
+target = target.to(device)
+model.to(device)
+
+# Get an optimizer for the manual backward and optimizer step
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+# Record the start time
+start_time = time.time()
+
+# Forward pass
+output = model(data)
+# Usually, in Lightning the loss is computed in the `training_step` method
+
+# Record the time after the forward pass
+forward_time = time.time()
+
+# Backward pass
+loss_fn = nn.CrossEntropyLoss()
+loss = model.training_step(data, batch_idx=0)
+loss.backward()
+
+# optimizer step and zero_grad
+optimizer.step()
+optimizer.zero_grad()
+
+# Record the end time
+end_time = time.time()
+
+# Print the times
+print(f"Forward pass time: {forward_time - start_time} seconds")
+print(f"Backward pass time: {end_time - forward_time} seconds")
+
+"""
+"""
 
 # Compare Parameter Count Original unstructured pruned model with structured pruned model
 
@@ -25,7 +88,7 @@ print(f'Parameter Original Model: {count_parameters(original_model)}')
 print(f'Parameter Pruned Model: {count_parameters(model)}')
 
 
-
+"""
 
 
 

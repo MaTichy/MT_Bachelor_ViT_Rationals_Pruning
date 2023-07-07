@@ -23,7 +23,7 @@ def vit_loader(args):
     
     elif(args == "efficient"):
         """
-        An implementation of Linformer in Pytorch. Linformer comes with two deficiencies. (1) It does not work for the auto-regressive case. (2) Assumes a fixed sequence length. However, if benchmarks show it to perform well enough, it will be added to this repository as a self-attention layer to be used in the encoder.
+        An implementation of Linformer in Pytorch. Linformer comes with two deficiencies. (1) It does not work for the auto-regressive case. (2) Assumes a fixed sequence length. 
 
         Linformer has been put into production by Facebook!
         """

@@ -1,3 +1,4 @@
+import pytz
 import torch.nn as nn
 import torch
 import lightning as pl
@@ -48,11 +49,9 @@ trainer_final = pl.Trainer(max_epochs=epochs, fast_dev_run=False,  callbacks=[Ea
 #train
 trainer_final.fit(model_pruned_final, train_loader, valid_loader)
 
-# Get the current date and time
-now = datetime.now()
-
-# Format the date and time as a string
-timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+my_timezone = pytz.timezone('Europe/Berlin')  
+now = datetime.now(my_timezone)  
+timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")  
 
 # Save model in the 'pruned_models' directory with a unique name
 torch.save(model_pruned_final, f'pruned_models/retrained_{timestamp}.pth')
