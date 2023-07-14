@@ -36,3 +36,8 @@ rational_trained_models/
 evaluation_img/
 
 pytorch_logs/
+
+visualization_model/
+
+optuna_logs/
+

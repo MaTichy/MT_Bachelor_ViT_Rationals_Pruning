@@ -4,19 +4,12 @@ from torch import nn
 from einops import rearrange
 from einops.layers.torch import Rearrange
 
-import rationals
-
 import lightning as pl
 
 from torchmetrics import Accuracy
 
 from warmupScheduler import LinearWarmupCosineAnnealingLR
 from torch.optim.lr_scheduler import StepLR, LambdaLR, _LRScheduler
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from mpl_toolkits.mplot3d import Axes3D
 
 from dataset2 import seed, seed_everything
 
@@ -27,12 +20,12 @@ seed_everything(seed)
 scheduler_string = 'StepLR' #'WarmupStepLR' 'Cosine'
 
 #StepLR               #gamma=0.6, 0.7 rationals: StepLR(optimizer, step_size=1, gamma=0.7), WarmupStepLR(optimizer, warmup_epochs=1, start_lr_warmup=4e-5, step_size=1, gamma=0.7) -> v_num242 lr simple: 5e-5, rationals, "gelu", coefficients=True
-step_size_steplr=1 
-gamma_steplr=0.5
+step_size_steplr=2
+gamma_steplr=0.7
 
 #WarmupStepLR
 warmup_epochs=1
-start_lr_warmup=4e-5 
+start_lr_warmup=5e-4
 step_size_warmup=1 
 gamma_warmup=0.7
 
@@ -43,10 +36,10 @@ eta_min_cosine=1e-6
 max_epochs_cosine=35
 
 #Accuracy Attributes train/ val
-num_classes_train=10
+num_classes_train=10 #10, 200
 top_k_train=1
 
-num_classes_val=10
+num_classes_val=10 #10
 top_k_val=1
 
 # helpers
@@ -90,12 +83,12 @@ def posemb_sincos_2d(patches, temperature = 10000, dtype = torch.float32):
 # classes
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim):
+    def __init__(self, dim, hidden_dim, activation):
         super().__init__()
         self.net = nn.Sequential(
-            nn.LayerNorm(dim),
+            nn.LayerNorm(dim), 
             nn.Linear(dim, hidden_dim),
-            nn.GELU(), #nn.PReLU(), nn.ReLU(), rationals.RationalsModel(), nn.GELU(), 
+            activation,
             nn.Linear(hidden_dim, dim),
         )
     def forward(self, x):
@@ -108,7 +101,7 @@ class Attention(nn.Module):
         inner_dim = dim_head *  heads
         self.heads = heads
         self.scale = dim_head ** -0.5
-        self.norm = nn.LayerNorm(dim)
+        self.norm = nn.LayerNorm(dim)  # dim AUCH HIER WEGEN OPTUNA MUSS input tensor matchen 
 
         self.attend = nn.Softmax(dim = -1)
 
@@ -130,13 +123,13 @@ class Attention(nn.Module):
         return self.to_out(out)
 
 class Transformer(pl.LightningModule):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, activation):
         super().__init__()
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
                 Attention(dim, heads = heads, dim_head = dim_head),
-                FeedForward(dim, mlp_dim)
+                FeedForward(dim, mlp_dim, activation)
             ]))
     def forward(self, x):
         for attn, ff in self.layers:
@@ -148,10 +141,10 @@ class Transformer(pl.LightningModule):
         return x
 
 class simple_ViT(pl.LightningModule):
-    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, lr):
+    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, channels = 3, dim_head = 64, lr, activation):
         super().__init__()
 
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=['activation'])
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
 
@@ -170,11 +163,11 @@ class simple_ViT(pl.LightningModule):
         self.to_patch_embedding = nn.Sequential(
             Rearrange('b c (h p1) (w p2) -> b h w (p1 p2 c)', p1 = patch_height, p2 = patch_width),
             nn.LayerNorm(patch_dim),
-            nn.Linear(patch_dim, dim),
-            nn.LayerNorm(dim),
+            nn.Linear(patch_dim, dim),  #dim ACHTUNG GEÄNDERT FÜR OPTUNA
+            nn.LayerNorm(dim),          # dim AUCH HIER
         )
 
-        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim)
+        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, activation)
 
         self.to_latent = nn.Identity()
         self.linear_head = nn.Sequential(
@@ -228,6 +221,9 @@ class simple_ViT(pl.LightningModule):
         self.log("train_acc", self.train_acc.compute(), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         # logg gradients
+        """
+        Turn OFF for optuna, becasue of CSV logger doesnt have self.logger.experiment.add_histogram
+        
         if self.global_step % 2000 == 0:
             for name, module in self.named_modules():
                 if isinstance(module, nn.Linear):
@@ -235,7 +231,7 @@ class simple_ViT(pl.LightningModule):
                     for param_name, param in module.named_parameters():
                         if param.grad is not None:
                             self.logger.experiment.add_histogram(f'gradients/{name}/{param_name}', param.grad, self.global_step)
-
+        """
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -257,6 +253,7 @@ class simple_ViT(pl.LightningModule):
 
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, logger=True)
         self.log("val_acc", self.val_acc.compute(), prog_bar=True, logger=True) 
+        self.val_loss = loss
 
         return loss
     

@@ -31,6 +31,12 @@ pruned_state_dict = model_pruned.state_dict()
 # Create new state dict
 new_state_dict = {}
 
+
+# maybe this code does work because, each key will also be in the new model because every key corresponds to a layer and 
+# no layers are removed just the dimesnion of the layers are smaller-> check again 
+
+
+
 # For each entry in the pruned state dict...
 for key, value in pruned_state_dict.items():
     # Check if the key exists in the state dictionary of the new model

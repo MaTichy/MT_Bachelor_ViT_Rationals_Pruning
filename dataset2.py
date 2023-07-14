@@ -60,7 +60,7 @@ train_transform = transforms.Compose([
         p=0.4),
     transforms.RandomGrayscale(p=0.2),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
+    #transforms.Normalize(mean=[0.4377, 0.4438, 0.4728], std=[0.1980, 0.2010, 0.1970])
 ])
     
 test_transform = transforms.Compose([
@@ -84,5 +84,7 @@ print(len(train_loader), len(valid_loader)) #,len(test_loader))
 
 # Get a batch of images
 image_batch, label_batch = next(iter(train_loader))
+
+print(image_batch.shape)
 
 print(label_batch)

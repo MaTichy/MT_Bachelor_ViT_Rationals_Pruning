@@ -12,7 +12,7 @@ import numpy as np
 
 # Set the batch size
 # 32 # this is lower than the ViT paper but it's because we're starting small
-BATCH_SIZE = 256 #64
+BATCH_SIZE = 32 #64
 seed = 42   #42
 
 # Create image size (from Table 3 in the ViT paper) 
@@ -71,11 +71,10 @@ val_dir = val_img_dir
 # Create transform pipeline manually
 manual_transforms = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomCrop(64),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                            std=[0.229, 0.224, 0.225])
+    #transforms.RandomHorizontalFlip(p=0.2),
+    #transforms.Normalize(mean=[0.5, 0.5, 0.5], 
+    #                        std=[0.5, 0.5, 0.5])
 ])           
 print(f"Manually created transforms: {manual_transforms}")
 

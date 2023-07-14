@@ -13,9 +13,20 @@ from pytorch_lightning import Trainer
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model_pruned = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-07-04_17-18-01.pth')
+#model_pruned = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-07-04_17-18-01.pth')
+
+original_model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/model_2023-07-04_17-18-01.pth')
+model = torch.load('/home/paperspace/Desktop/MT_Bachelor_ViT_Rationals_Pruning/pruned_models/structural_pruned_2023-07-07_16-25-35.pth')
 
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+print(f'Parameter Original Model: {count_parameters(original_model)}')
+print(f'Parameter Pruned Model: {count_parameters(model)}')
+
+"""
 # Get state dict from pruned model
 pruned_state_dict = model_pruned.state_dict()
 # Clean up pruned model's state_dict
@@ -27,7 +38,7 @@ pruned_state_dict = cleaned_state_dict
 for key, value in pruned_state_dict.items():
     print(key)
 
-"""
+
 
 #Load Original Model unpruned
 model_shell = vit_loader('simple')
